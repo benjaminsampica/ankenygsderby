@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { event, levels, raceNumberStarts, type Level } from "./event.js";
+import { event, levels, raceNumberStarts, displayOpening, displayDeadline, type Level } from "./event.js";
 
 export type Participant = { firstName: string; lastInitial: string; level: Level; troopNumber: string };
 export type Registration = Participant & {
@@ -41,7 +41,11 @@ export function allocateRaceNumber(settings: EventState, level: Level) {
   return { raceNumber, nextNumbers: { ...settings.nextNumbers, [level]: raceNumber + 1 } };
 }
 export function registrationOpen(now = Date.now()) {
-  return now < Date.parse(event.closesAt) && now < Date.parse(event.expiresAt);
+  return now >= Date.parse(event.opensAt) && now < Date.parse(event.closesAt) && now < Date.parse(event.expiresAt);
+}
+export function registrationStatus(now = Date.now()) {
+  if (now < Date.parse(event.opensAt)) return `Registration opens ${displayOpening()}.`;
+  return registrationOpen(now) ? `Registration closes ${displayDeadline(event.closesAt)}.` : "Registration is closed. Contact an organizer for help with a late entry.";
 }
 export function remainingTtl(expiresAt: string, now = Date.now()) {
   const seconds = Math.floor((Date.parse(expiresAt) - now) / 1000);

@@ -1,10 +1,25 @@
 import type { Child } from "hono/jsx";
-import { event, levels, displayDeadline } from "./event.js";
+import { event, levels, displayDeadline, displayOpening } from "./event.js";
 import { duplicateKey, type Errors, type FormValues, type Registration } from "./domain.js";
 
 type IconName = "copy" | "printer" | "x" | "chevron-left" | "chevron-right" | "pencil" | "download" | "user-plus" | "external-link";
 function Icon({ name }: { name: IconName }) {
   return <span class={"icon icon-" + name} aria-hidden="true"></span>;
+}
+
+function DerbyPatch({ motif = "car" }: { motif?: "car" | "flag" }) {
+  return <svg class={"derby-patch patch-" + motif} viewBox="0 0 96 96" aria-hidden="true" focusable="false">
+    <rect class="patch-fill" x="3" y="3" width="90" height="90" rx="34" />
+    <rect x="10" y="10" width="76" height="76" rx="28" fill="none" stroke="currentColor" stroke-opacity=".35" stroke-dasharray="2 4" />
+    {motif === "car" ? <g fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M23 56v-9l33-11 15 13 5 2v9H23m9-13 26-3m-7-15 4-5m-17 9-2-6" />
+      <circle cx="35" cy="61" r="7" class="patch-fill" /><circle cx="65" cy="61" r="7" class="patch-fill" />
+      <path d="M23 74h50" stroke-opacity=".35" />
+    </g> : <g stroke="currentColor" stroke-width="2.5" stroke-linejoin="round">
+      <path d="M31 73V25h36v30H31" fill="none" stroke-linecap="round" />
+      <path d="M31 25h12v10H31zm24 0h12v10H55zM43 35h12v10H43zM31 45h12v10H31zm24 0h12v10H55z" fill="currentColor" stroke="none" />
+    </g>}
+  </svg>;
 }
 
 function AwardBadge({ motif }: { motif: "scout" | "animal" | "art" }) {
@@ -13,10 +28,11 @@ function AwardBadge({ motif }: { motif: "scout" | "animal" | "art" }) {
     <path class="badge-rosette" d="m80 10 13 7 15-1 9 12 14 6 3 15 10 11-4 15 4 15-10 11-3 15-14 6-9 12-15-1-13 7-13-7-15 1-9-12-14-6-3-15-10-11 4-15-4-15 10-11 3-15 14-6 9-12 15 1Z" />
     <circle class="badge-stitch" cx="80" cy="75" r="48" />
     <circle class="badge-face" cx="80" cy="75" r="40" />
-    {motif === "scout" && <g class="badge-symbol">
-      <path d="M80 91C42 102 44 58 65 64 51 32 108 32 95 64 118 56 119 103 80 91Z" fill="currentColor" />
-      <path d="M80 80v25m-9 0h18" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" />
-      <path d="m80 58 3 8 9 1-7 5 2 9-7-5-7 5 2-9-7-5 9-1Z" class="badge-highlight" />
+    {motif === "scout" && <g transform="rotate(6 80 75)">
+      <defs><mask id="scout-trefoil" class="badge-trefoil-mask" maskUnits="userSpaceOnUse" x="50" y="47" width="60" height="56">
+        <image href="/images/girl-scout-trefoil.png" x="50" y="47" width="60" height="56" />
+      </mask></defs>
+      <rect x="50" y="47" width="60" height="56" fill="currentColor" mask="url(#scout-trefoil)" />
     </g>}
     {motif === "animal" && <g class="badge-symbol" fill="currentColor">
       <ellipse cx="58" cy="68" rx="7" ry="10" transform="rotate(-25 58 68)" />
@@ -41,16 +57,16 @@ export function Layout({ title, page, children }: { title: string; page: string;
     <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title} | Pinewood Derby 2027</title>
     <meta name="description" content="Register for the 2027 Girl Scouts Pinewood Derby. Race day is January 9." />
-    <meta name="htmx-config" content={JSON.stringify({ historyCacheSize: 0, allowEval: false, allowScriptTags: false, selfRequestsOnly: true, includeIndicatorStyles: false })} />
+    <meta name="htmx-config" content={JSON.stringify({ includeIndicatorCSS: false, preload: { boostEvent: "mouseenter" } })} />
     <link rel="icon" href="/images/derby-logo.png" type="image/png" /><link rel="stylesheet" href="/styles.css" />
-    <script src="/htmx.min.js" defer></script><script src="/site.js" defer></script>
-  </head><body hx-history="false">
+    <script src="/htmx.min.js" defer></script><script src="/hx-preload.min.js" defer></script><script src="/site.js" defer></script>
+  </head><body hx-boost:inherited="true">
     <a class="skip" href="#main">Skip to content</a>
     <header class="site-header"><a class="wordmark" href="/" aria-label="Pinewood Derby home"><img class="site-logo" src="/images/derby-logo.png" width="400" height="296" alt="Ankeny Girl Scouts Pinewood Derby" /></a>
       <nav aria-label="Main navigation"><a href="/guide" aria-current={page === "guide" ? "page" : undefined}>Car guide</a><a class="nav-register" href="/register" aria-current={page === "register" ? "page" : undefined}>Register</a></nav>
     </header>
-    <main id="main">{children}</main>
-    <footer><div><strong>Ankeny Girl Scouts</strong><p>Contact <a href={"mailto:" + event.contacts[0].email}>Benjamin</a> or <a href={"mailto:" + event.contacts[1].email}>Todd</a>.</p></div><a class="organizer-link" href="/admin">Organizer sign in</a></footer>
+    <main id="main" tabindex={-1}>{children}</main>
+    <footer><div><strong>Ankeny Girl Scouts</strong><p>Contact <a href={"mailto:" + event.contacts[0].email}>Benjamin</a> or <a href={"mailto:" + event.contacts[1].email}>Todd</a>.</p></div><a class="organizer-link" href="/admin" hx-boost="false">Organizer sign in</a></footer>
     <div id="request-error" class="request-error" role="alert" hidden>We couldn’t reach the server. Your entries are still here. Please try again.</div>
   </body></html>;
 }
@@ -58,21 +74,21 @@ export function Home() {
   return <Layout title="Ankeny Girl Scouts" page="home">
     <section class="hero" aria-labelledby="event-title">
       <div class="hero-copy">
-        <p class="eyebrow">ANKENY GIRL SCOUTS</p>
+        <div class="hero-intro"><DerbyPatch /><p class="eyebrow">ANKENY GIRL SCOUTS</p></div>
         <h1 id="event-title">Pinewood<br /><em>Derby</em></h1>
         <p class="hero-date">Saturday, January 9, 2027</p>
         <p class="hero-description">Join Girl Scouts from Daisies through Ambassadors for our annual Pinewood Derby. Families are welcome to watch and cheer.</p>
         <div class="hero-actions"><a class="button" href="/register">Register a racer</a><a class="button secondary" href="/guide">Car pickup &amp; guide</a></div>
-        <div class="deadline" hx-get="/api/status" hx-trigger="load" hx-swap="innerHTML">Registration closes {displayDeadline(event.closesAt)}.</div>
+        <div class="deadline" hx-get="/api/status" hx-trigger="load" hx-swap="innerHTML">Registration opens {displayOpening()}. Registration closes {displayDeadline(event.closesAt)}.</div>
       </div>
       <img class="hero-image" src="/images/race-day-2026.jpg" srcset="/images/race-day-2026-small.jpg 700w, /images/race-day-2026.jpg 1400w" sizes="(max-width: 750px) calc(100vw - 40px), (max-width: 1200px) 48vw, 540px" width="1400" height="1050" fetchpriority="high" alt="Families gathered along the pinewood derby track." />
     </section>
     <section id="race-day" class="race-day" aria-labelledby="race-day-title">
       <h2 id="race-day-title">Race day</h2>
       <dl class="race-day-details">
-        <div><dt>Location</dt><dd><strong>{event.venue}</strong><span>{event.address}</span></dd></div>
-        <div><dt>Schedule</dt><dd><strong>{event.raceDate}</strong><span>{event.raceTimes}</span></dd></div>
-        <div><dt>Check-in</dt><dd>Save your race number for check-in.</dd></div>
+        <div class="stitched-panel tone-sage"><dt>Location</dt><dd><strong>{event.venue}</strong><span>{event.address}</span></dd></div>
+        <div class="stitched-panel tone-gold"><dt>Schedule</dt><dd><strong>{event.raceDate}</strong><span>{event.raceTimes}</span></dd></div>
+        <div class="stitched-panel tone-lavender"><dt>Check-in</dt><dd>Save your race number for check-in.</dd></div>
       </dl>
     </section>
     <section class="design-awards" aria-labelledby="awards-title">
@@ -105,19 +121,19 @@ export function Home() {
   </Layout>;
 }
 function EventPhoto({ name, alt }: { name: string; alt: string }) {
-  return <a class="gallery-photo" href={"/images/" + name + ".jpg"} data-gallery-photo aria-label={"View photo: " + alt} aria-haspopup="dialog"><img class="event-photo" src={"/images/" + name + "-small.jpg"} width="700" height="525" loading="lazy" decoding="async" alt={alt} /></a>;
+  return <a class="gallery-photo" href={"/images/" + name + ".jpg"} data-gallery-photo hx-boost="false" aria-label={"View photo: " + alt} aria-haspopup="dialog"><img class="event-photo" src={"/images/" + name + "-small.jpg"} width="700" height="525" loading="lazy" decoding="async" alt={alt} /></a>;
 }
 export function RegisterPage() {
   return <Layout title="Register" page="register"><section class="registration-page">
-    <header class="page-heading"><h1>Register a racer</h1></header>
-    <div id="registration-panel" class="paper" aria-label="Registration" hx-get="/api/registration-form" hx-trigger="load" hx-swap="innerHTML"><p class="loading" role="status">Loading</p><noscript>Please enable JavaScript to register.</noscript></div>
+    <header class="page-heading illustrated-heading"><div><h1>Register a racer</h1></div><DerbyPatch motif="flag" /></header>
+    <div id="registration-panel" class="paper registration-paper stitched-panel tone-sage" aria-label="Registration" hx-get="/api/registration-form" hx-trigger="load" hx-swap="innerHTML"><p class="loading" role="status">Loading</p><noscript>Please enable JavaScript to register.</noscript></div>
   </section></Layout>;
 }
 export function GuidePage() {
   const toddEmail = "mailto:" + event.contacts[1].email;
   return <Layout title="Car guide" page="guide"><article class="guide-page">
-    <header class="page-heading"><h1>Car guide</h1><p>Pick up your kit, build your car, and get ready to race.</p></header>
-    <section id="kit-pickup" class="guide-pickup" aria-labelledby="pickup-title">
+    <header class="page-heading illustrated-heading"><div><h1>Car guide</h1><p>Pick up your kit, build your car, and get ready to race.</p></div><DerbyPatch /></header>
+    <section id="kit-pickup" class="guide-pickup stitched-panel tone-sage" aria-labelledby="pickup-title">
       <div>
         <h2 id="pickup-title">Car kit pickup</h2>
         <p class="pickup-fee">Bring <strong>$10 per registered racer</strong> for event registration and your car kit.</p>
@@ -133,7 +149,7 @@ export function GuidePage() {
     <section id="car-rules" class="guide-section" aria-labelledby="rules-title">
       <h2 id="rules-title">Rules &amp; guidelines</h2>
       <div class="guide-rules-grid">
-        <div><h3>Car specifications</h3><p class="guide-note">Most measurements match the kit’s original block of wood.</p>
+        <div class="specification-panel stitched-panel tone-gold"><h3>Car specifications</h3><p class="guide-note">Most measurements match the kit’s original block of wood.</p>
           <dl class="car-specifications">
             <div><dt>Maximum width</dt><dd>2¾ inches</dd></div>
             <div><dt>Maximum length</dt><dd>7 inches</dd></div>
@@ -156,7 +172,7 @@ export function GuidePage() {
         </ul></div>
       </div>
     </section>
-    <section id="building" class="guide-section" aria-labelledby="building-title">
+    <section id="building" class="guide-section building-panel stitched-panel tone-lavender" aria-labelledby="building-title">
       <h2 id="building-title">Construction &amp; design</h2>
         <div class="guide-building-copy">
           <div>
@@ -187,7 +203,7 @@ export function ConfirmationPage() {
   return <Layout title="Your registration" page="confirmation"><div class="receipt-wrap"><section id="receipt" class="paper" hx-get="/api/confirmation" hx-trigger="load" hx-swap="innerHTML"><p class="loading" role="status">Loading</p><noscript>Please enable JavaScript to view your confirmation.</noscript></section></div></Layout>;
 }
 export function AdminPage() {
-  return <Layout title="Organizers" page="admin"><section class="admin-page"><div class="page-heading section-heading"><div><h1>Race roster</h1></div><a class="text-link" href="/.auth/logout?post_logout_redirect_uri=/">Sign out</a></div><div id="admin-content" hx-get="/api/admin/dashboard" hx-trigger="load"><p class="loading" role="status">Loading registrations</p></div></section></Layout>;
+  return <Layout title="Organizers" page="admin"><section class="admin-page"><div class="page-heading section-heading"><div><h1>Race roster</h1></div><a class="text-link" href="/.auth/logout?post_logout_redirect_uri=/" hx-boost="false">Sign out</a></div><div id="admin-content" hx-get="/api/admin/dashboard" hx-trigger="load"><p class="loading" role="status">Loading registrations</p></div></section></Layout>;
 }
 export function Message({ heading, children }: { heading: string; children: Child }) {
   return <div class="message" role="status"><h2>{heading}</h2><p>{children}</p></div>;
@@ -203,21 +219,21 @@ export function ParticipantFields({ values = {}, errors = {} }: { values?: FormV
 type FormProps = { csrf: string; submissionId: string; values?: FormValues; errors?: Errors; organizer?: boolean };
 export function RegistrationForm({ csrf, submissionId, values, errors, organizer = false }: FormProps) {
   const action = organizer ? "/api/admin/register" : "/api/register";
-  return <form action={action} method="post" hx-post={action} hx-target="this" hx-swap="outerHTML" hx-disabled-elt="find button[type='submit']">
+  return <form action={action} method="post" hx-post={action} hx-target="this" hx-swap="outerHTML" hx-disable="find button[type='submit']">
     <h2 class={organizer ? undefined : "sr-only"}>{organizer ? "Add a racer" : "Racer details"}</h2>
     <ErrorSummary errors={errors || {}} /><input type="hidden" name="csrf" value={csrf} /><input type="hidden" name="submissionId" value={submissionId} />
     <div class="honey" aria-hidden="true"><label for="website">Leave this empty</label><input id="website" name="website" tabindex={-1} autocomplete="off" /></div>
     <ParticipantFields values={values} errors={errors} />
     <button class="button full" type="submit"><span class="idle-text">{organizer ? "Add racer" : "Register"}</span><span class="busy-text">Saving</span></button>
-    {organizer && <a class="text-link" href="/admin">Back to roster</a>}
+    {organizer && <a class="text-link" href="/admin" hx-boost="false">Back to roster</a>}
   </form>;
 }
 export function Receipt({ row }: { row: Registration }) {
   return <>
-    <div class="receipt-heading"><span class="small-tag">PINEWOOD DERBY 2027</span></div>
+    <div class="receipt-heading"><span class="small-tag">PINEWOOD DERBY 2027</span><DerbyPatch motif="flag" /></div>
     <h1>Registration complete</h1>
-    <p class="receipt-label">YOUR RACE NUMBER</p>
-    <div class="race-number">{String(row.raceNumber).padStart(2, "0")}</div>
+    <div class="race-number-patch stitched-panel tone-gold"><p class="receipt-label">YOUR RACE NUMBER</p>
+    <div class="race-number">{String(row.raceNumber).padStart(2, "0")}</div></div>
     <ol class="receipt-reminders" aria-label="Before race day">
       <li><strong>Save your race number.</strong> You’ll need it at check-in. Take a screenshot or print this receipt.</li>
       <li><strong><a href="/guide">Visit the car guide</a>.</strong> Find car requirements and kit pickup details before race day.</li>
@@ -236,8 +252,8 @@ export function Roster({ rows, search = "" }: { rows: Registration[]; search?: s
   return <div id="roster"><p class="roster-notice"><strong>Rosters are deleted on February 8, 2027.</strong> Download your final roster before then.</p><div class="roster-count"><strong>{rows.length}</strong> racers</div>{visible.length ? <div class="table-scroll"><table><caption class="sr-only">Registered racers</caption><thead><tr><th scope="col"><span class="sr-only">Actions</span></th><th scope="col">Race #</th><th scope="col">Racer</th><th scope="col">Level</th><th scope="col">Troop</th></tr></thead><tbody>{visible.map(row => <tr><td><button class="text-button" type="button" hx-get={"/api/admin/edit/" + row.id} hx-target="#editor" hx-swap="innerHTML" aria-label={"Edit racer " + row.raceNumber}><Icon name="pencil" />Edit</button></td><td class="number-cell">{row.raceNumber}</td><td>{row.firstName} {row.lastInitial}.{(counts.get(duplicateKey(row)) || 0) > 1 && <span class="duplicate-tag">Possible duplicate</span>}</td><td>{row.level}</td><td>{row.troopNumber}</td></tr>)}</tbody></table></div> : <div class="empty"><h2>{search ? "No matching racers." : "The starting grid is open."}</h2><p>{search ? "Try another name, troop, level, or race number." : "Registrations will appear here as families sign up."}</p></div>}</div>;
 }
 export function Dashboard({ rows }: { rows: Registration[] }) {
-  return <><div class="admin-toolbar"><label class="search-label"><span class="sr-only">Search registrations</span><input type="search" name="q" placeholder="Search name, troop, level, or number" hx-get="/api/admin/roster" hx-trigger="input changed delay:250ms, search" hx-target="#roster" hx-swap="outerHTML" /></label><a class="button secondary" href="/api/admin/export"><Icon name="download" />Export CSV</a><button class="button" hx-get="/api/admin/new" hx-target="#editor" type="button"><Icon name="user-plus" />Add racer</button></div><div id="editor"></div><Roster rows={rows} /></>;
+  return <><div class="admin-toolbar"><label class="search-label"><span class="sr-only">Search registrations</span><input type="search" name="q" placeholder="Search name, troop, level, or number" hx-get="/api/admin/roster" hx-trigger="input changed delay:250ms, search" hx-target="#roster" hx-swap="outerHTML" /></label><a class="button secondary" href="/api/admin/export" download><Icon name="download" />Export CSV</a><button class="button" hx-get="/api/admin/new" hx-target="#editor" type="button"><Icon name="user-plus" />Add racer</button></div><div id="editor"></div><Roster rows={rows} /></>;
 }
 export function EditForm({ row, csrf, errors = {} }: { row: Registration; csrf: string; errors?: Errors }) {
-  return <form class="paper editor-form" action={"/api/admin/edit/" + row.id} method="post" hx-post={"/api/admin/edit/" + row.id} hx-target="this" hx-swap="outerHTML"><p class="small-tag">RACE NUMBER {row.raceNumber}</p><h2>Edit registration</h2><ErrorSummary errors={errors} /><input type="hidden" name="csrf" value={csrf} /><input type="hidden" name="etag" value={row._etag || ""} /><ParticipantFields values={row} errors={errors} /><p class="field-hint level-change-note">Changing the troop level assigns a new race number.</p><div class="receipt-actions"><button class="button" type="submit">Save changes</button><a href="/admin" class="button secondary">Back to roster</a></div><p><a href={"/api/admin/receipt/" + row.id} class="text-link" target="_blank" rel="noopener">View confirmation <Icon name="external-link" /></a></p></form>;
+  return <form class="paper editor-form" action={"/api/admin/edit/" + row.id} method="post" hx-post={"/api/admin/edit/" + row.id} hx-target="this" hx-swap="outerHTML" hx-disable="find button[type='submit']"><p class="small-tag">RACE NUMBER {row.raceNumber}</p><h2>Edit registration</h2><ErrorSummary errors={errors} /><input type="hidden" name="csrf" value={csrf} /><input type="hidden" name="etag" value={row._etag || ""} /><ParticipantFields values={row} errors={errors} /><p class="field-hint level-change-note">Changing the troop level assigns a new race number.</p><div class="receipt-actions"><button class="button" type="submit">Save changes</button><a href="/admin" hx-boost="false" class="button secondary">Back to roster</a></div><p><a href={"/api/admin/receipt/" + row.id} class="text-link" target="_blank" rel="noopener">View confirmation <Icon name="external-link" /></a></p></form>;
 }

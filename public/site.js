@@ -3,34 +3,40 @@ document.addEventListener("input", (event) => {
     event.target.value = event.target.value.replace(/[^A-Za-z]/g, "").slice(0, 1).toUpperCase();
   }
 });
-document.addEventListener("htmx:configRequest", (event) => {
-  if (event.detail.path === "/api/confirmation") {
-    event.detail.headers["X-Receipt-Token"] = window.location.hash.slice(1);
+document.addEventListener("htmx:config:request", (event) => {
+  const request = event.detail.ctx.request;
+  if (request.action === "/api/confirmation") {
+    request.headers["X-Receipt-Token"] = window.location.hash.slice(1);
   }
 });
-document.addEventListener("htmx:beforeRequest", () => {
+document.addEventListener("htmx:before:request", () => {
   document.getElementById("request-error").hidden = true;
 });
-document.addEventListener("htmx:beforeSwap", (event) => {
-  const status = event.detail.xhr.status;
-  // Expected form errors contain the complete, populated form. Keep the real
-  // HTTP status while letting HTMX render it. Server failures keep existing input.
-  if ([400, 403, 404, 409, 410, 422].includes(status)) {
-    event.detail.shouldSwap = true;
-    event.detail.isError = false;
+document.addEventListener("htmx:response:error", (event) => {
+  const ctx = event.detail.ctx;
+  // HTMX 4 swaps error responses by default. Expected errors contain renderable
+  // fragments; unexpected failures must leave the current form and entries intact.
+  if (![400, 403, 404, 409, 410, 422].includes(ctx.response.status)) {
+    ctx.swap = "none";
+    document.getElementById("request-error").hidden = false;
   }
 });
-document.addEventListener("htmx:afterSwap", (event) => {
-  const summary = event.detail.target.querySelector?.(".validation-summary");
-  summary?.focus();
-  if (event.detail.target.id === "editor") {
-    event.detail.target.scrollIntoView({ block: "start", behavior: "smooth" });
-    event.detail.target.querySelector("input:not([type=hidden])")?.focus({ preventScroll: true });
+document.addEventListener("htmx:after:settle", (event) => {
+  // task.target is the inserted form after outerHTML, not the detached old form.
+  const target = event.detail.task.target;
+  const summary = target.querySelector?.(".validation-summary");
+  if (summary) summary.focus();
+  else if (target.id === "editor") {
+    target.scrollIntoView({ block: "start", behavior: "smooth" });
+    target.querySelector("input:not([type=hidden])")?.focus({ preventScroll: true });
+  } else if (target === document.body) {
+    initializeGallery();
+    document.getElementById("main").focus({ preventScroll: true });
   }
 });
-for (const name of ["htmx:sendError", "htmx:timeout", "htmx:responseError"]) {
-  document.addEventListener(name, () => { document.getElementById("request-error").hidden = false; });
-}
+document.addEventListener("htmx:error", () => {
+  document.getElementById("request-error").hidden = false;
+});
 document.addEventListener("click", async (event) => {
   if (event.target.closest("[data-print]")) window.print();
   if (event.target.closest("[data-copy-receipt]")) {
@@ -42,8 +48,9 @@ document.addEventListener("click", async (event) => {
   }
 });
 
-const viewer = document.getElementById("photo-viewer");
-if (viewer) {
+function initializeGallery() {
+  const viewer = document.getElementById("photo-viewer");
+  if (!viewer) return;
   const photos = Array.from(document.querySelectorAll("[data-gallery-photo]"));
   const picture = document.getElementById("viewer-image");
   const count = document.getElementById("viewer-count");
@@ -86,3 +93,5 @@ if (viewer) {
   });
   picture.addEventListener("error", () => { count.textContent = "Photo unavailable. Try the next photo."; });
 }
+
+initializeGallery();

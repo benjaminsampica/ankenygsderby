@@ -6,7 +6,7 @@ import { Home, RegisterPage, GuidePage, ConfirmationPage, AdminPage, Layout } fr
 async function buildSite() {
   await mkdir("dist/site", { recursive: true });
   const pages = { "index.html": <Home />, "register/index.html": <RegisterPage />, "guide/index.html": <GuidePage />, "confirmation/index.html": <ConfirmationPage />, "admin/index.html": <AdminPage />,
-    "403.html": <Layout title="Organizer access required" page="error"><section class="narrow"><p class="eyebrow">ORGANIZER ACCESS</p><h1>Organizer access required</h1><p>Use the Microsoft account invited by an organizer. Signing in alone does not grant access.</p><a class="button" href="/.auth/logout?post_logout_redirect_uri=/admin">Try another account</a></section></Layout>,
+    "403.html": <Layout title="Organizer access required" page="error"><section class="narrow"><p class="eyebrow">ORGANIZER ACCESS</p><h1>Organizer access required</h1><p>Use the Microsoft account invited by an organizer. Signing in alone does not grant access.</p><a class="button" href="/.auth/logout?post_logout_redirect_uri=/admin" hx-boost="false">Try another account</a></section></Layout>,
     "404.html": <Layout title="Page not found" page="error"><section class="narrow"><h1>Page not found</h1><p>This page wasn’t found.</p><a class="button" href="/">Back to the derby</a></section></Layout> };
   for (const [path, component] of Object.entries(pages)) {
     await mkdir("dist/site/" + path.split("/").slice(0, -1).join("/"), { recursive: true });
@@ -14,6 +14,7 @@ async function buildSite() {
   }
   await cp("public", "dist/site", { recursive: true });
   await cp("node_modules/htmx.org/dist/htmx.min.js", "dist/site/htmx.min.js");
+  await cp("node_modules/htmx.org/dist/ext/hx-preload.min.js", "dist/site/hx-preload.min.js");
   await cp("staticwebapp.config.json", "dist/site/staticwebapp.config.json");
 }
 async function buildApi() {

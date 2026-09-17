@@ -28,6 +28,27 @@ test("fixed cutoff is exclusive at midnight Central", () => {
   assert.equal(registrationOpen(Date.parse("2027-01-04T05:59:59Z")), true);
   assert.equal(registrationOpen(Date.parse("2027-01-04T06:00:00Z")), false);
 });
+test("registration opens exactly December 4 at midnight Central", () => {
+  assert.equal(registrationOpen(Date.parse("2026-12-04T05:59:59.999Z")), false);
+  assert.equal(registrationOpen(Date.parse("2026-12-04T06:00:00.000Z")), true);
+});
+test("API hides signup before opening and shows the opening date", async t => {
+  const app = createApp(async () => { throw new Error("Must not touch database"); });
+  const clock = t.mock.method(Date, "now", () => Date.parse("2026-12-04T05:59:59.999Z"));
+  for (const path of ["/api/status", "/api/registration-form"]) {
+    const response = await app.request(path);
+    const html = await response.text();
+    assert.equal(response.status, 200);
+    assert.match(html, /Registration opens December 4, 2026 at 12:00 AM Central/);
+    assert.doesNotMatch(html, /<form|late entry/);
+  }
+  clock.mock.mockImplementation(() => Date.parse("2026-12-04T06:00:00.000Z"));
+  assert.match(await (await app.request("/api/registration-form")).text(), /<form/);
+  assert.match(await (await app.request("/api/status")).text(), /Registration closes January 3/);
+  clock.mock.mockImplementation(() => Date.parse(event.closesAt));
+  assert.doesNotMatch(await (await app.request("/api/registration-form")).text(), /<form/);
+  assert.match(await (await app.request("/api/status")).text(), /Registration is closed/);
+});
 test("retention is an absolute event deadline, not thirty days from last edit", () => {
   assert.equal(remainingTtl(event.expiresAt, Date.parse("2027-02-07T06:00:00Z")), 86400);
   assert.equal(remainingTtl(event.expiresAt, Date.parse("2027-02-07T07:00:00Z")), 82800);
@@ -55,7 +76,8 @@ test("API rejects unauthorized organizer access before reading the database", as
     assert.equal(response.status, 403);
   }
 });
-test("API renders populated validation fragments and rejects forged requests", async () => {
+test("API renders populated validation fragments and rejects forged requests", async t => {
+  t.mock.method(Date, "now", () => Date.parse(event.opensAt));
   process.env.NODE_ENV = "development";
   process.env.SITE_ORIGIN = "http://localhost:4280";
   const app = createApp(async () => ({ settings: async () => initialState() }) as DerbyStore);

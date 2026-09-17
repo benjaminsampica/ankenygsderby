@@ -2,8 +2,7 @@ import { randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import { Hono, type Context } from "hono";
 import { getCookie, setCookie } from "hono/cookie";
 import { bodyLimit } from "hono/body-limit";
-import { event, displayDeadline } from "./event.js";
-import { Problem, registrationOpen, rosterCsv, validateParticipant, type Registration } from "./domain.js";
+import { Problem, registrationOpen, registrationStatus, rosterCsv, validateParticipant, type Registration } from "./domain.js";
 import { getStore, type DerbyStore } from "./store.js";
 import { Dashboard, EditForm, Message, Receipt, RegistrationForm, Roster } from "./views.js";
 
@@ -53,10 +52,10 @@ export function createApp(storeProvider: () => Promise<DerbyStore> = getStore) {
   });
   app.get("/api/health", async c => { await (await storeProvider()).settings(); return c.json({ status: "ok" }); });
   app.get("/api/status", async c => {
-    return c.html(<span>{registrationOpen() ? `Registration closes ${displayDeadline(event.closesAt)}.` : "Registration is closed. Contact an organizer for late entries."}</span>);
+    return c.html(<span>{registrationStatus()}</span>);
   });
   app.get("/api/registration-form", async c => {
-    if (!registrationOpen()) return c.html(<Message heading="Registration is closed">Contact Benjamin or Todd for help with a late entry.</Message>);
+    if (!registrationOpen()) return c.html(<Message heading="Registration is closed">{registrationStatus()}</Message>);
     return c.html(<RegistrationForm csrf={csrf(c)} submissionId={randomUUID()} />);
   });
   for (const isAdmin of [false, true]) app.post(isAdmin ? "/api/admin/register" : "/api/register", async c => {

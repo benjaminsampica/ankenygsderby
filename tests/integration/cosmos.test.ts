@@ -9,6 +9,7 @@ import { event, levels, raceNumberStarts } from "../../src/event.js";
 import { initialState, rosterCsv, type Participant } from "../../src/domain.js";
 
 test("Cosmos: registration, concurrency, retry, edits, private UUID links, expiry", { timeout: 120_000 }, async t => {
+  t.mock.method(Date, "now", () => Date.parse(event.opensAt));
   const key = process.env.COSMOS_KEY || readFileSync("dev/cosmos.key", "utf8").trim();
   const client = new CosmosClient({ endpoint: process.env.COSMOS_ENDPOINT || "http://localhost:8081", key, connectionPolicy: { enableEndpointDiscovery: false } });
   const { database } = await client.databases.create({ id: "derby-tests-" + randomUUID() });
@@ -18,6 +19,23 @@ test("Cosmos: registration, concurrency, retry, edits, private UUID links, expir
   const submissionId = randomUUID();
   try {
     await store.initialize();
+    await t.test("early public submissions fail while organizers can add racers", async t => {
+      t.mock.method(Date, "now", () => Date.parse(event.opensAt) - 1);
+      process.env.NODE_ENV = "development";
+      process.env.SITE_ORIGIN = "http://localhost:4280";
+      const earlyStore = new DerbyStore(container, "early-tests");
+      await earlyStore.initialize();
+      const app = createApp(async () => earlyStore);
+      const csrf = "a".repeat(64);
+      const response = await app.request("/api/register", { method: "POST",
+        headers: { origin: process.env.SITE_ORIGIN, cookie: "derby-csrf=" + csrf },
+        body: new URLSearchParams({ ...racer, csrf, submissionId: randomUUID() }) });
+      assert.equal(response.status, 409);
+      assert.match(await response.text(), /Registration opens December 4/);
+      assert.equal((await earlyStore.list()).length, 0);
+      assert.equal((await earlyStore.settings()).nextNumbers.Brownie, 200);
+      assert.equal((await earlyStore.register(racer, randomUUID(), true)).raceNumber, 200);
+    });
     await t.test("HTTP signup, retry, private receipt, organizer edit, and export work together", async () => {
       process.env.NODE_ENV = "development";
       process.env.SITE_ORIGIN = "http://localhost:4280";

@@ -3,6 +3,7 @@ export const event = {
   name: "Pinewood Derby",
   year: 2027,
   raceDate: "Saturday, January 9, 2027",
+  opensAt: "2026-12-04T06:00:00.000Z",
   closesAt: "2027-01-04T06:00:00.000Z",
   expiresAt: "2027-02-08T06:00:00.000Z",
   timeZone: "America/Chicago",
@@ -26,4 +27,10 @@ export function displayDeadline(iso: string) {
   return new Intl.DateTimeFormat("en-US", {
     timeZone: event.timeZone, month: "long", day: "numeric", hour: "numeric", minute: "2-digit",
   }).format(new Date(Date.parse(iso) - 60_000)) + " Central";
+}
+
+export function displayOpening() {
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: event.timeZone, month: "long", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit",
+  }).format(new Date(event.opensAt)) + " Central";
 }

@@ -1,7 +1,7 @@
 import { CosmosClient, type Container, type OperationInput } from "@azure/cosmos";
 import { readFileSync } from "node:fs";
 import { event, levels, raceNumberStarts } from "./event.js";
-import { allocateRaceNumber, initialState, Problem, registrationOpen, remainingTtl, submissionHash,
+import { allocateRaceNumber, initialState, Problem, registrationOpen, registrationStatus, remainingTtl, submissionHash,
   type EventState, type Participant, type Registration } from "./domain.js";
 
 const codeOf = (error: unknown) => Number((error as { code?: number })?.code);
@@ -72,7 +72,7 @@ export class DerbyStore {
         return existing;
       }
       const settings = await this.settings();
-      if (!organizer && !registrationOpen()) throw new Problem(409, "Registration is closed. Contact an organizer for help with a late entry.");
+      if (!organizer && !registrationOpen()) throw new Problem(409, registrationStatus());
       const { raceNumber, nextNumbers } = allocateRaceNumber(settings, participant.level);
       const row: Registration = {
         ...participant, id, kind: "registration", eventId: this.eventId, raceNumber,
