@@ -99,6 +99,23 @@ test("boosted navigation consumes preload, updates title/history, and rewires ga
   } finally { await close(); }
 });
 
+test("opening a saved confirmation sends its private receipt token on the first request", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  try {
+    // A slow application script must not let HTMX send the request before its listeners are installed.
+    await page.route("**/site.js", async route => {
+      const response = await route.fetch();
+      await new Promise(resolve => setTimeout(resolve, 150));
+      await route.fulfill({ response });
+    });
+    const receipt = page.waitForRequest(request => request.url().endsWith("/api/confirmation"));
+    await page.goto(origin + "/confirmation#" + racer.id);
+    assert.equal((await receipt).headers()["x-receipt-token"], racer.id);
+    await expect(page.locator(".race-number")).toHaveText("200");
+  } finally { await context.close(); }
+});
+
 test("validation replaces form and focuses errors; submit redirects with private receipt header", async () => {
   const { page, close } = await pageFor("/register");
   try {

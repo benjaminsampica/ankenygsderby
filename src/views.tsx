@@ -59,7 +59,8 @@ export function Layout({ title, page, children }: { title: string; page: string;
     <meta name="description" content="Register for the 2027 Girl Scouts Pinewood Derby. Race day is January 9." />
     <meta name="htmx-config" content={JSON.stringify({ includeIndicatorCSS: false, preload: { boostEvent: "mouseenter" } })} />
     <link rel="icon" href="/images/derby-logo.png" type="image/png" /><link rel="stylesheet" href="/styles.css" />
-    <script src="/htmx.min.js" defer></script><script src="/hx-preload.min.js" defer></script><script src="/site.js" defer></script>
+    {/* Install request listeners before HTMX initializes load-triggered requests. */}
+    <script src="/site.js" defer></script><script src="/htmx.min.js" defer></script><script src="/hx-preload.min.js" defer></script>
   </head><body hx-boost:inherited="true">
     <a class="skip" href="#main">Skip to content</a>
     <header class="site-header"><a class="wordmark" href="/" aria-label="Pinewood Derby home"><img class="site-logo" src="/images/derby-logo.png" width="400" height="296" alt="Ankeny Girl Scouts Pinewood Derby" /></a>
