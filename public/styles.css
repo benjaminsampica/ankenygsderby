@@ -71,6 +71,7 @@ nav a { text-decoration: none; font-size: .9rem; font-weight: 600; }
 nav a:hover, nav a[aria-current=page] { text-decoration: underline; }
 .nav-register { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; background: var(--green); color: white; padding: 11px 19px; border-radius: var(--radius-control); }
 .hero { display: grid; grid-template-columns: 1fr 1.08fr; gap: 60px; align-items: center; padding: 40px 0 56px; }
+.hero-photo { position: relative; }
 .hero-image { display: block; width: 100%; height: auto; aspect-ratio: 1 / 1.12; object-fit: cover; object-position: 57% center; border-radius: 100px 100px 16px 16px; padding: 10px; background: var(--sage); border: 1px dashed #b4c9ae; }
 .hero-copy { padding: 14px 0; }
 .eyebrow { font-size: .75rem; font-weight: 700; letter-spacing: .13em; margin-bottom: 23px; }
@@ -247,9 +248,7 @@ tbody tr:last-child td { border: 0; }
 .patch-fill { fill: var(--gold); }
 .patch-flag { color: var(--lavender-ink); transform: rotate(5deg); }
 .patch-flag .patch-fill { fill: var(--lavender); }
-.hero-intro { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
-.hero-intro .derby-patch { width: 64px; height: 64px; }
-.hero-intro .eyebrow { margin: 0; }
+.hero-photo .derby-patch { position: absolute; right: 18px; bottom: -14px; }
 .illustrated-heading { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
 .illustrated-heading h1 { font-weight: 400; }
 .illustrated-heading h1:last-child { margin-bottom: 0; }
@@ -289,7 +288,7 @@ tbody tr:last-child td { border: 0; }
   nav a { font-size: .8rem; }
   .nav-register { padding: 10px 13px; }
   .hero h1 { font-size: clamp(3.3rem, 12vw, 4.4rem); margin-bottom: 22px; }
-  .hero-intro .eyebrow { margin-bottom: 0; }
+  .hero-photo .derby-patch { width: 72px; height: 72px; }
   .hero-date { font-size: 1.1rem; }
   .hero-description { font-size: .95rem; margin-bottom: 23px; }
   .hero-actions .button { flex: 1 1 auto; }

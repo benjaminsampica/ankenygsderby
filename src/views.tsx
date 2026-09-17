@@ -75,14 +75,17 @@ export function Home() {
   return <Layout title="Ankeny Girl Scouts" page="home">
     <section class="hero" aria-labelledby="event-title">
       <div class="hero-copy">
-        <div class="hero-intro"><DerbyPatch /><p class="eyebrow">ANKENY GIRL SCOUTS</p></div>
+        <p class="eyebrow">ANKENY GIRL SCOUTS</p>
         <h1 id="event-title">Pinewood<br /><em>Derby</em></h1>
         <p class="hero-date">Saturday, January 9, 2027</p>
         <p class="hero-description">Join Girl Scouts from Daisies through Ambassadors for our annual Pinewood Derby. Families are welcome to watch and cheer.</p>
         <div class="hero-actions"><a class="button" href="/register">Register a racer</a><a class="button secondary" href="/guide">Car pickup &amp; guide</a></div>
         <div class="deadline" hx-get="/api/status" hx-trigger="load" hx-swap="innerHTML">Registration opens {displayOpening()}. Registration closes {displayDeadline(event.closesAt)}.</div>
       </div>
-      <img class="hero-image" src="/images/race-day-2026.jpg" srcset="/images/race-day-2026-small.jpg 700w, /images/race-day-2026.jpg 1400w" sizes="(max-width: 750px) calc(100vw - 40px), (max-width: 1200px) 48vw, 540px" width="1400" height="1050" fetchpriority="high" alt="Families gathered along the pinewood derby track." />
+      <div class="hero-photo">
+        <img class="hero-image" src="/images/race-day-2026.jpg" srcset="/images/race-day-2026-small.jpg 700w, /images/race-day-2026.jpg 1400w" sizes="(max-width: 750px) calc(100vw - 40px), (max-width: 1200px) 48vw, 540px" width="1400" height="1050" fetchpriority="high" alt="Families gathered along the pinewood derby track." />
+        <DerbyPatch />
+      </div>
     </section>
     <section id="race-day" class="race-day" aria-labelledby="race-day-title">
       <h2 id="race-day-title">Race day</h2>
