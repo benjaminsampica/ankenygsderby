@@ -1,0 +1,43 @@
+name: pinewood-derby
+services:
+  cosmos:
+    image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator@sha256:2db1f9e74c506bcf6fc347aa937aea1c00fa756061296a5a9efba530ce86ec02
+    command: ["--key-file", "/emulator.key", "--enable-telemetry", "false"]
+    volumes:
+      - cosmos-data:/data
+      - ./dev/cosmos.key:/emulator.key:ro
+    ports:
+      - "127.0.0.1:8081:8081"
+      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:1234:1234"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/ready"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+      start_period: 15s
+  web:
+    image: node:22-bookworm-slim
+    working_dir: /app
+    init: true
+    command: ["sh", "-c", "npm ci --no-audit --no-fund && npm run build && npm run dev:container"]
+    volumes:
+      - .:/app
+      - node-modules:/app/node_modules
+      - build-output:/app/dist
+    ports:
+      - "127.0.0.1:4280:4280"
+    environment:
+      NODE_ENV: development
+      COSMOS_ENDPOINT: http://cosmos:8081
+      COSMOS_DATABASE: pinewood-local
+      COSMOS_KEY_FILE: /app/dev/cosmos.key
+      SITE_ORIGIN: http://localhost:4280
+      SWA_CLI_TELEMETRY_ENABLED: "false"
+    depends_on:
+      cosmos:
+        condition: service_healthy
+volumes:
+  cosmos-data:
+  node-modules:
+  build-output:

@@ -1,0 +1,34 @@
+{
+  "name": "pinewood-derby",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "setup": "npm ci && npm run build",
+    "build": "tsx scripts/build.tsx",
+    "check": "tsc --noEmit",
+    "test": "tsx --test tests/*.test.ts",
+    "test:integration": "tsx --test tests/integration/*.test.ts",
+    "dev": "docker compose up",
+    "dev:container": "node scripts/run.mjs all",
+    "dev:api": "node scripts/run.mjs api",
+    "dev:web": "node scripts/run.mjs web",
+    "dev:assets": "tsx scripts/build.tsx --watch"
+  },
+  "dependencies": {
+    "@azure/cosmos": "4.10.1",
+    "@azure/functions": "4.16.5",
+    "@hono/node-server": "^1.19.0",
+    "hono": "4.13.8",
+    "htmx.org": "2.0.10"
+  },
+  "overrides": { "adm-zip": "0.6.1", "tmp": "0.2.7" },
+  "devDependencies": {
+    "@azure/static-web-apps-cli": "2.0.10",
+    "@types/node": "^22.0.0",
+    "esbuild": "^0.25.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0"
+  }
+}

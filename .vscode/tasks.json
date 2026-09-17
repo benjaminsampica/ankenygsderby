@@ -1,0 +1,10 @@
+{
+  "version": "2.0.0",
+  "tasks": [{
+    "label": "Start Pinewood Derby",
+    "type": "shell",
+    "command": "docker compose up",
+    "group": { "kind": "build", "isDefault": true },
+    "problemMatcher": []
+  }]
+}
