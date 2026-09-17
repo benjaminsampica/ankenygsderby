@@ -73,7 +73,8 @@ Review assigned car numbers after import. DerbyNet imports append entries: avoid
 - Subscription: `Mine` (`5ec3a12c-48ea-4088-81db-1e361eeaf4fe`), personal tenant.
 - Resource group: `ankenygsderby`, Central US.
 - Static Web App: `ankenygsderby`, Free plan.
-- Website: https://jolly-stone-063af2610.5.azurestaticapps.net
+- Website: https://ankenygsderby.com
+- Azure deployment hostname: `jolly-stone-063af2610.5.azurestaticapps.net`.
 - Cosmos account: `ankenygsderby-cosmos`; database: `pinewood`; container: `event-data`.
 - GitHub: https://github.com/benjaminsampica/ankenygsderby (private).
 
@@ -102,7 +103,7 @@ Open the Static Web App in Azure Portal, then **Role Management → Invite**. Ch
 
 ### Custom domain
 
-DNS and domain binding are managed manually. After binding the Porkbun domain in Azure, change `SITE_ORIGIN` to its exact HTTPS origin without a trailing slash and make it the default domain so alternate hostnames redirect there. Until then, use the Azure hostname above for registration and invitations. No source deployment is required for the application setting change.
+The canonical domain is `ankenygsderby.com`, with `SITE_ORIGIN=https://ankenygsderby.com`. Azure manages HTTPS certificates and redirects the Azure hostname and `www.ankenygsderby.com` to the canonical domain. Porkbun holds the root ALIAS and `www` CNAME pointing to the Azure deployment hostname, plus Azure's ownership-verification TXT record. Domain email records remain separate. DNS and bindings are managed manually; the GitHub workflow deploys only application files.
 
 ## Before opening registration
 

@@ -48,7 +48,7 @@ jobs:
         env:
           SITE_URL: ${{ steps.deploy.outputs.static_web_app_url }}
         run: |
-          curl --fail --silent --show-error --retry 8 --retry-all-errors --retry-delay 10 "$SITE_URL/api/health" | node -e '
+          curl --location --fail --silent --show-error --retry 8 --retry-all-errors --retry-delay 10 "$SITE_URL/api/health" | node -e '
             let body = "";
             process.stdin.on("data", chunk => body += chunk);
             process.stdin.on("end", () => {
