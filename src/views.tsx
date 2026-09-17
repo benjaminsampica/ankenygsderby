@@ -22,12 +22,19 @@ function DerbyPatch({ motif = "car" }: { motif?: "car" | "flag" }) {
   </svg>;
 }
 
-function AwardBadge({ motif }: { motif: "scout" | "animal" | "art" }) {
+function AwardBadge({ motif }: { motif: "first" | "second" | "third" | "scout" | "animal" | "art" }) {
+  const place = motif === "first" ? "1" : motif === "second" ? "2" : motif === "third" ? "3" : undefined;
   return <svg class="award-badge" viewBox="0 0 160 180" aria-hidden="true" focusable="false">
     <path class="badge-tails" d="M49 105 34 167 60 154 77 174 86 113M81 113 98 174 112 153 139 164 116 102" />
     <path class="badge-rosette" d="m80 10 13 7 15-1 9 12 14 6 3 15 10 11-4 15 4 15-10 11-3 15-14 6-9 12-15-1-13 7-13-7-15 1-9-12-14-6-3-15-10-11 4-15-4-15 10-11 3-15 14-6 9-12 15 1Z" />
     <circle class="badge-stitch" cx="80" cy="75" r="48" />
     <circle class="badge-face" cx="80" cy="75" r="40" />
+    {place && <g fill="currentColor">
+      <text class="badge-place" x="80" y="94" text-anchor="middle">{place}</text>
+      <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <path d="M63 99c-15-8-20-24-13-39m5 27-10-2m7-8-9-6m9-3-5-9M97 99c15-8 20-24 13-39m-5 27 10-2m-7-8 9-6m-9-3 5-9" />
+      </g>
+    </g>}
     {motif === "scout" && <g transform="rotate(6 80 75)">
       <defs><mask id="scout-trefoil" class="badge-trefoil-mask" maskUnits="userSpaceOnUse" x="50" y="47" width="60" height="56">
         <image href="/images/girl-scout-trefoil.png" x="50" y="47" width="60" height="56" />
@@ -82,10 +89,7 @@ export function Home() {
         <div class="hero-actions"><a class="button" href="/register">Register a racer</a><a class="button secondary" href="/guide">Car pickup &amp; guide</a></div>
         <div class="deadline" hx-get="/api/status" hx-trigger="load" hx-swap="innerHTML">Registration opens {displayOpening()}. Registration closes {displayDeadline(event.closesAt)}.</div>
       </div>
-      <div class="hero-photo">
-        <img class="hero-image" src="/images/race-day-2026.jpg" srcset="/images/race-day-2026-small.jpg 700w, /images/race-day-2026.jpg 1400w" sizes="(max-width: 750px) calc(100vw - 40px), (max-width: 1200px) 48vw, 540px" width="1400" height="1050" fetchpriority="high" alt="Families gathered along the pinewood derby track." />
-        <DerbyPatch />
-      </div>
+      <img class="hero-image" src="/images/race-day-2026.jpg" srcset="/images/race-day-2026-small.jpg 700w, /images/race-day-2026.jpg 1400w" sizes="(max-width: 750px) calc(100vw - 40px), (max-width: 1200px) 48vw, 540px" width="1400" height="1050" fetchpriority="high" alt="Families gathered along the pinewood derby track." />
     </section>
     <section id="race-day" class="race-day" aria-labelledby="race-day-title">
       <h2 id="race-day-title">Race day</h2>
@@ -95,8 +99,14 @@ export function Home() {
         <div class="stitched-panel tone-lavender"><dt>Check-in</dt><dd>Save your race number for check-in.</dd></div>
       </dl>
     </section>
-    <section class="design-awards" aria-labelledby="awards-title">
-      <div class="awards-heading"><div><h2 id="awards-title">Design awards</h2></div><p>Awarded in every race class.</p></div>
+    <section class="awards" aria-labelledby="awards-title">
+      <div class="awards-heading"><h2 id="awards-title">Awards</h2><p>Race and design awards in every class. A badge for every racer.</p></div>
+      <ul class="award-list race-award-list">
+        <li class="award-card award-first"><AwardBadge motif="first" /><div><h3>1st Place</h3><p>Fastest finish in each race class.</p></div></li>
+        <li class="award-card award-second"><AwardBadge motif="second" /><div><h3>2nd Place</h3><p>Second-fastest in each race class.</p></div></li>
+        <li class="award-card award-third"><AwardBadge motif="third" /><div><h3>3rd Place</h3><p>Third-fastest in each race class.</p></div></li>
+        <li class="award-card award-participation"><DerbyPatch /><div><h3>Participation</h3><p>A badge for every racer.</p></div></li>
+      </ul>
       <ul class="award-list">
         <li class="award-card award-scout"><AwardBadge motif="scout" /><div><h3>Most Girl Scout</h3><p>Let your Girl Scout spirit shine.</p></div></li>
         <li class="award-card award-animal"><AwardBadge motif="animal" /><div><h3>Best Animal Design</h3><p>Take a walk on the wild side.</p></div></li>
