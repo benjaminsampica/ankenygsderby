@@ -98,7 +98,6 @@ nav a:hover, nav a[aria-current=page] { text-decoration: underline; }
 .awards { padding: 40px 0; border-top: 1px solid var(--line); }
 .awards-heading { margin-bottom: 24px; }
 .awards h2 { font-size: var(--section-title-size); margin: 0; }
-.awards-heading p { color: var(--muted); font-size: .85rem; margin: 10px 0 0; }
 .award-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; list-style: none; padding: 0; margin: 0; }
 .race-award-list { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-bottom: 20px; }
 .award-card { --award-color: var(--sage-ink); --award-tint: var(--sage); --award-ribbon: #b4d0a4; position: relative; padding: 24px 16px 30px; text-align: center; background: var(--award-tint); border-radius: 64px 64px 12px 12px; }
@@ -195,7 +194,6 @@ input[aria-invalid=true], select[aria-invalid=true] { border-color: var(--danger
 .guide-list li + li { margin-top: 12px; }
 .guide-building-copy { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 48px; }
 .guide-building-copy p:last-child { margin-bottom: 0; }
-.guide-closing { margin-top: 36px; padding-top: 24px; border-top: 1px solid var(--line); font-size: .9rem; }
 .receipt-heading { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
 .receipt-heading .small-tag { margin: 0; }
 .receipt-label { text-align: center; margin: 0; font-size: .75rem; font-weight: 600; letter-spacing: .1em; color: var(--muted); }
@@ -210,7 +208,6 @@ input[aria-invalid=true], select[aria-invalid=true] { border-color: var(--danger
 .receipt-details dt { color: var(--muted); }
 .receipt-details dd { margin: 0; text-align: right; font-weight: 600; }
 .muted { color: var(--muted); font-size: .9rem; }
-.receipt-info { font-size: .9rem; margin: 24px 0; }
 .receipt-actions { display: flex; flex-wrap: wrap; gap: 12px; }
 .receipt-wrap .text-link { display: inline-block; margin-top: 26px; }
 .receipt-wrap #copy-status:empty { display: none; }

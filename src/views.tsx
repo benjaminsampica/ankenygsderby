@@ -100,7 +100,7 @@ export function Home() {
       </dl>
     </section>
     <section class="awards" aria-labelledby="awards-title">
-      <div class="awards-heading"><h2 id="awards-title">Awards</h2><p>Race and design awards in every class. A badge for every racer.</p></div>
+      <div class="awards-heading"><h2 id="awards-title">Awards</h2></div>
       <ul class="award-list race-award-list">
         <li class="award-card award-first"><AwardBadge motif="first" /><div><h3>1st Place</h3><p>Fastest finish in each race class.</p></div></li>
         <li class="award-card award-second"><AwardBadge motif="second" /><div><h3>2nd Place</h3><p>Second-fastest in each race class.</p></div></li>
@@ -210,7 +210,6 @@ export function GuidePage() {
           </div>
         </div>
     </section>
-    <div class="guide-closing"><p>Have fun building, and Go Girl Scouts! We welcome your ideas for making the derby even better.</p><a href="/#race-day">Race-day location, times &amp; check-in</a></div>
   </article></Layout>;
 }
 export function ConfirmationPage() {
@@ -253,7 +252,6 @@ export function Receipt({ row }: { row: Registration }) {
       <li><strong><a href="/guide">Visit the car guide</a>.</strong> Find car requirements and kit pickup details before race day.</li>
     </ol>
     <dl class="receipt-details"><div><dt>Racer</dt><dd>{row.firstName} {row.lastInitial}.</dd></div><div><dt>Troop level</dt><dd>{row.level}</dd></div><div><dt>Troop number</dt><dd>{row.troopNumber}</dd></div><div><dt>Race day</dt><dd>{event.raceDate}</dd></div></dl>
-    <p class="receipt-info"><a href="/#race-day">Race-day location, times &amp; check-in</a></p>
     <div class="receipt-actions"><button class="button" type="button" data-copy-receipt><Icon name="copy" />Copy confirmation link</button><button class="button secondary" type="button" data-print><Icon name="printer" />Print receipt</button></div>
     <p id="copy-status" role="status" class="field-hint"></p>
     <a href="/register" class="text-link">Register another racer</a>
