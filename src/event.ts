@@ -10,10 +10,7 @@ export const event = {
   venue: "Ankeny Christian Church",
   address: "2506 SW 3rd St Pl, Ankeny, IA 50023",
   raceTimes: "Race times coming soon.",
-  contacts: [
-    { name: "Benjamin", email: "benjamin.sampica@gmail.com" },
-    { name: "Todd", email: "todd.m.dresser@outlook.com" },
-  ],
+  contactEmail: "ankenygirlscouts@gmail.com",
 } as const;
 
 export const levels = ["Daisy", "Brownie", "Junior", "Cadette", "Senior", "Ambassador"] as const;

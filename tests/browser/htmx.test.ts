@@ -87,7 +87,7 @@ test("boosted navigation consumes preload, updates title/history, and rewires ga
     await page.locator("[data-gallery-photo]").first().click();
     await expect(page.getByRole("dialog")).toBeVisible();
     await page.getByRole("button", { name: "Next" }).click();
-    await expect(page.locator("#viewer-count")).toHaveText("2 / 9");
+    await expect(page.locator("#viewer-count")).toHaveText("2 / 6");
     await page.keyboard.press("Escape");
     await expect(page.locator("[data-gallery-photo]").first()).toBeFocused();
     await page.goForward();
@@ -95,7 +95,7 @@ test("boosted navigation consumes preload, updates title/history, and rewires ga
     await page.getByRole("link", { name: "Pinewood Derby home" }).click();
     await page.locator("[data-gallery-photo]").first().click();
     await page.getByRole("button", { name: "Next" }).click();
-    await expect(page.locator("#viewer-count")).toHaveText("2 / 9");
+    await expect(page.locator("#viewer-count")).toHaveText("2 / 6");
   } finally { await close(); }
 });
 

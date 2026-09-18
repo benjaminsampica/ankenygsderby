@@ -74,7 +74,7 @@ export function Layout({ title, page, children }: { title: string; page: string;
       <nav aria-label="Main navigation"><a href="/guide" aria-current={page === "guide" ? "page" : undefined}>Car guide</a><a class="nav-register" href="/register" aria-current={page === "register" ? "page" : undefined}>Register</a></nav>
     </header>
     <main id="main" tabindex={-1}>{children}</main>
-    <footer><div><strong>Ankeny Girl Scouts</strong><p>Contact <a href={"mailto:" + event.contacts[0].email}>Benjamin</a> or <a href={"mailto:" + event.contacts[1].email}>Todd</a>.</p></div><a class="organizer-link" href="/admin" hx-boost="false">Organizer sign in</a></footer>
+    <footer><div><strong>Ankeny Girl Scouts</strong><p>Contact <a href={"mailto:" + event.contactEmail}>{event.contactEmail}</a>.</p></div><a class="organizer-link" href="/admin" hx-boost="false">Organizer sign in</a></footer>
     <div id="request-error" class="request-error" role="alert" hidden>We couldn’t reach the server. Your entries are still here. Please try again.</div>
   </body></html>;
 }
@@ -89,7 +89,7 @@ export function Home() {
         <div class="hero-actions"><a class="button" href="/register">Register a racer</a><a class="button secondary" href="/guide">Car pickup &amp; guide</a></div>
         <div class="deadline" hx-get="/api/status" hx-trigger="load" hx-swap="innerHTML">Registration opens {displayOpening()}. Registration closes {displayDeadline(event.closesAt)}.</div>
       </div>
-      <img class="hero-image" src="/images/race-day-2026.jpg" srcset="/images/race-day-2026-small.jpg 700w, /images/race-day-2026.jpg 1400w" sizes="(max-width: 750px) calc(100vw - 40px), (max-width: 1200px) 48vw, 540px" width="1400" height="1050" fetchpriority="high" alt="Families gathered along the pinewood derby track." />
+      <img class="hero-image" src="/images/cars-2026.jpg" srcset="/images/cars-2026-small.jpg 700w, /images/cars-2026.jpg 1400w" sizes="(max-width: 750px) calc(100vw - 40px), (max-width: 1200px) 48vw, 540px" width="1400" height="1050" fetchpriority="high" alt="Handmade derby cars decorated with animals, flowers, and colorful characters." />
     </section>
     <section id="race-day" class="race-day" aria-labelledby="race-day-title">
       <h2 id="race-day-title">Race day</h2>
@@ -117,14 +117,11 @@ export function Home() {
       <div class="gallery-heading"><h2 id="gallery-title">Previous years</h2></div>
       <div class="gallery-grid">
         <EventPhoto name="cars-2026" alt="Handmade derby cars decorated with candy, flowers, and colorful characters." />
-        <EventPhoto name="pit-area-2026" alt="Scouts and families looking over the cars before racing." />
-        <EventPhoto name="spectators-2026" alt="Families cheering beside the track during a race." />
+        <EventPhoto name="daisy-designs-2026" alt="Colorful Daisy derby cars with painted patterns and rainbow details." />
+        <EventPhoto name="creative-cars-2026" alt="Creative car designs including a cat, candy, a race car, and a glittery creature." />
         <EventPhoto name="track-2026" alt="The yellow race track ready for race day." />
-        <EventPhoto name="starting-grid-2026" alt="Colorful derby cars waiting in their numbered spaces." />
-        <EventPhoto name="check-in-2026" alt="Scouts and volunteers gathered at the check-in table." />
-        <EventPhoto name="trackside-2026" alt="Scouts watching the race from beside the track." />
+        <EventPhoto name="check-in-setup-2026" alt="Check-in table set up with supplies and a checkered tablecloth before the event." />
         <EventPhoto name="ribbons-2026" alt="Award ribbons displayed above a checkered table." />
-        <EventPhoto name="celebration-2026" alt="Scouts posing together at the race-day photo booth." />
       </div>
     </section>
     <dialog id="photo-viewer" class="photo-viewer" aria-label="Previous years photo viewer">
@@ -144,7 +141,7 @@ export function RegisterPage() {
   </section></Layout>;
 }
 export function GuidePage() {
-  const toddEmail = "mailto:" + event.contacts[1].email;
+  const contactEmail = "mailto:" + event.contactEmail;
   return <Layout title="Car guide" page="guide"><article class="guide-page">
     <header class="page-heading illustrated-heading"><div><h1>Car guide</h1><p>Pick up your kit, build your car, and get ready to race.</p></div><DerbyPatch /></header>
     <section id="kit-pickup" class="guide-pickup stitched-panel tone-sage" aria-labelledby="pickup-title">
@@ -156,7 +153,7 @@ export function GuidePage() {
           <div><h3>When</h3><dl class="pickup-hours"><div><dt>Monday–Friday</dt><dd>6–9 pm</dd></div><div><dt>Saturday–Sunday</dt><dd>9 am–9 pm</dd></div></dl><p class="pickup-unavailable">No pickup December 20–28.</p></div>
         </div>
         <p>Pickup is self-service, so there’s no need to call. Car kits are in a box by the front door. Leave your payment in the envelope provided.</p>
-        <p>If these times don’t work for you, email <a href={toddEmail}>todd.m.dresser@outlook.com</a>.</p>
+        <p>If these times don’t work for you, email <a href={contactEmail}>{event.contactEmail}</a>.</p>
       </div>
       <img class="event-photo" src="/images/cars-2026.jpg" srcset="/images/cars-2026-small.jpg 700w, /images/cars-2026.jpg 1400w" sizes="(max-width: 750px) calc(100vw - 40px), 35vw" width="1400" height="1050" alt="Decorated pinewood derby cars lined up before racing." />
     </section>
@@ -196,7 +193,7 @@ export function GuidePage() {
           </div>
           <div>
           <h3>Need a hand with woodworking?</h3>
-          <p><a href={toddEmail}>Contact Todd</a> for help. He can assist with individual cars or arrange a troop building session in his garage.</p>
+          <p><a href={contactEmail}>Contact Todd</a> for help. He can assist with individual cars or arrange a troop building session in his garage.</p>
           </div>
           <div>
           <h3>Wheels &amp; weight</h3>
@@ -206,7 +203,8 @@ export function GuidePage() {
           <h3>Paint &amp; decorations</h3>
           <p>There are plenty of pinewood derby design ideas online. Todd’s family has had good results with Crayola washable kids’ paint, including glitter and metallic colors. Let your Scout choose a design that feels like her own.</p>
           <p>The local Boy Scout store carries approved accessories and decals:</p>
-          <address><strong>Boy Scout Store</strong><br />6123 Scout Trail<br />Des Moines, IA 50321</address>
+          <address><strong>Mid-Iowa Scout Shop</strong><br />7900 Hickman Road<br />Windsor Heights, IA 50324</address>
+          <p>Call <a href="tel:+15152655990">(515) 265-5990</a> before visiting to confirm shop hours at the new location.</p>
           </div>
         </div>
     </section>
