@@ -1,8 +1,3 @@
-document.addEventListener("input", (event) => {
-  if (event.target instanceof HTMLInputElement && event.target.name === "lastInitial") {
-    event.target.value = event.target.value.replace(/[^A-Za-z]/g, "").slice(0, 1).toUpperCase();
-  }
-});
 document.addEventListener("htmx:config:request", (event) => {
   const request = event.detail.ctx.request;
   if (request.action === "/api/confirmation") {

@@ -13,7 +13,8 @@ import { event } from "../../src/event.js";
 let browser: Browser;
 let server: ReturnType<typeof serve>;
 let origin: string;
-const racer = { id: "a1111111-1111-4111-8111-111111111111", firstName: "Avery", lastInitial: "S", level: "Brownie", troopNumber: "00123", raceNumber: 200, _etag: "test-etag" } as Registration;
+const racer = { id: "a1111111-1111-4111-8111-111111111111", firstName: "Avery", lastName: "Smith", level: "Brownie", troopNumber: "00123", raceNumber: 200,
+  parentName: "Jordan Smith", parentPhone: "(515) 555-0123", emergencyName: "Pat Lee", emergencyPhone: "(515) 555-0199", photoConsent: false, _etag: "test-etag" } as Registration;
 const organizer = Buffer.from(JSON.stringify({ identityProvider: "aad", userId: "browser-test", userRoles: ["organizer"] })).toString("base64");
 
 before(async () => {
@@ -21,8 +22,9 @@ before(async () => {
   process.env.NODE_ENV = "development";
   // Real routes and templates with an in-memory store: never write to an event roster.
   const store = {
-    settings: async () => initialState(),
+    settings: async () => ({ ...initialState(), volunteerCounts: { runner: 1 } }),
     list: async () => [racer],
+    listVolunteers: async () => [{ id: "volunteer:" + racer.id, name: "Sam Rivera", phone: "(515) 555-0144", roles: ["emcee"] }],
     get: async (id: string) => id === racer.id ? racer : undefined,
     register: async () => racer,
     update: async () => racer,
@@ -62,9 +64,15 @@ async function pageFor(path: string, admin = false) {
 }
 async function fillRacer(page: Page) {
   await page.getByLabel("First name", { exact: true }).fill("Avery");
-  await page.getByLabel("Last initial", { exact: true }).fill("s");
+  await page.getByLabel("Last name", { exact: true }).fill("Smith");
   await page.getByLabel("Troop level", { exact: true }).selectOption("Brownie");
   await page.getByLabel("Troop number", { exact: true }).fill("00123");
+  const parent = page.getByRole("group", { name: "Parent or guardian" });
+  await parent.getByLabel("Name", { exact: true }).fill("Jordan Smith");
+  await parent.getByLabel("Phone", { exact: true }).fill("515-555-0123");
+  const emergency = page.getByRole("group", { name: "Emergency contact" });
+  await emergency.getByLabel("Name", { exact: true }).fill("Pat Lee");
+  await emergency.getByLabel("Phone", { exact: true }).fill("515-555-0199");
 }
 
 test("boosted navigation consumes preload, updates title/history, and rewires gallery", async () => {
@@ -144,6 +152,18 @@ test("validation replaces form and focuses errors; submit redirects with private
   } finally { await close(); }
 });
 
+test("volunteer roles appear after opting in and full roles cannot be chosen", async () => {
+  const { page, close } = await pageFor("/register");
+  try {
+    const emcee = page.getByRole("checkbox", { name: /^Emcee/ });
+    await expect(emcee).toBeHidden();
+    await page.getByLabel("I'm interested in volunteering").check();
+    await expect(emcee).toBeVisible();
+    await expect(page.getByRole("checkbox", { name: /^Runner/ })).toBeDisabled();
+    await expect(page.getByRole("checkbox", { name: /^Emcee/ })).toBeEnabled();
+  } finally { await close(); }
+});
+
 test("server/network failures retain input and re-enable submit; retry clears error", async () => {
   const { page, close } = await pageFor("/register");
   try {
@@ -189,6 +209,9 @@ test("organizer search/edit swap correctly; export stays a download and auth sta
     const download = page.waitForEvent("download");
     await page.getByRole("link", { name: "Export CSV" }).click();
     assert.equal((await download).suggestedFilename(), "pinewood-derby-2027.csv");
+    const contacts = page.waitForEvent("download");
+    await page.getByRole("link", { name: "Contacts CSV" }).click();
+    assert.equal((await contacts).suggestedFilename(), "pinewood-derby-2027-contacts.csv");
     await expect(page.getByRole("heading", { name: "Race roster" })).toBeVisible();
     const authRequests: string[] = [];
     page.on("request", request => { if (request.url().includes("/.auth/")) authRequests.push(request.resourceType()); });

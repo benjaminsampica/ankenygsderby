@@ -4,7 +4,7 @@ Registration website for the Ankeny Girl Scouts Pinewood Derby on January 9, 202
 
 ## Overview
 
-Server-rendered Hono TSX and HTMX 4, with TypeScript Azure Functions and Cosmos DB. Families register racers and save private confirmation links. Organizers manage the roster and export it for DerbyNet.
+Server-rendered Hono TSX and HTMX 4, with TypeScript Azure Functions and Cosmos DB. Families register racers and save private confirmation links. Organizers manage the roster and export it for DerbyNet. A separate contacts export holds parent and emergency contacts, photo consent, and volunteer roles for check-in and volunteer follow-up.
 
 Public navigation uses HTMX boosting and preloading. Public registration opens December 4, 2026 at midnight Central and closes January 4, 2027 at midnight Central; participant data expires February 8, 2027. Organizers can add racers outside the public registration window. Event details and dates live in `src/event.ts`.
 

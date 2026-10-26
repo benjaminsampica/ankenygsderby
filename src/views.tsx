@@ -1,8 +1,8 @@
 import type { Child } from "hono/jsx";
-import { event, levels, displayDeadline, displayOpening } from "./event.js";
-import { duplicateKey, type Errors, type FormValues, type Registration } from "./domain.js";
+import { event, levels, levelLabels, raceSchedule, volunteerRoles, displayDeadline, displayOpening, type VolunteerRole } from "./event.js";
+import { duplicateKey, type Errors, type FormValues, type Registration, type Volunteer } from "./domain.js";
 
-type IconName = "copy" | "printer" | "x" | "chevron-left" | "chevron-right" | "pencil" | "download" | "user-plus" | "external-link";
+type IconName = "copy" | "printer" | "x" | "chevron-left" | "chevron-right" | "pencil" | "download" | "user-plus" | "external-link" | "user";
 function Icon({ name }: { name: IconName }) {
   return <span class={"icon icon-" + name} aria-hidden="true"></span>;
 }
@@ -71,7 +71,7 @@ export function Layout({ title, page, children }: { title: string; page: string;
   </head><body hx-boost:inherited="true">
     <a class="skip" href="#main">Skip to content</a>
     <header class="site-header"><a class="wordmark" href="/" aria-label="Pinewood Derby home"><img class="site-logo" src="/images/derby-logo.png" width="400" height="296" alt="Ankeny Girl Scouts Pinewood Derby" /></a>
-      <nav aria-label="Main navigation"><a href="/guide" aria-current={page === "guide" ? "page" : undefined}>Car guide</a><a class="nav-register" href="/register" aria-current={page === "register" ? "page" : undefined}>Register</a></nav>
+      <nav aria-label="Main navigation"><a href="/guide" aria-current={page === "guide" ? "page" : undefined}>Car guide</a><a href="/volunteer" aria-current={page === "volunteer" ? "page" : undefined}>Volunteer</a><a class="nav-register" href="/register" aria-current={page === "register" ? "page" : undefined}>Register</a></nav>
     </header>
     <main id="main" tabindex={-1}>{children}</main>
     <footer><div><strong>Ankeny Girl Scouts</strong><p>Contact <a href={"mailto:" + event.contactEmail}>{event.contactEmail}</a>.</p></div><a class="organizer-link" href="/admin" hx-boost="false">Organizer sign in</a></footer>
@@ -85,7 +85,7 @@ export function Home() {
         <p class="eyebrow">ANKENY GIRL SCOUTS</p>
         <h1 id="event-title">Pinewood<br /><em>Derby</em></h1>
         <p class="hero-date">Saturday, January 9, 2027</p>
-        <p class="hero-description">Join Girl Scouts from Daisies through Ambassadors for our annual Pinewood Derby. Families are welcome to watch and cheer.</p>
+        <p class="hero-description">Join Girl Scouts from Daisies through Ambassadors for our annual Pinewood Derby. Anyone can race in the open Outlaw class. Families are welcome to watch and cheer.</p>
         <div class="hero-actions"><a class="button" href="/register">Register a racer</a><a class="button secondary" href="/guide">Car pickup &amp; guide</a></div>
         <div class="deadline" hx-get="/api/status" hx-trigger="load" hx-swap="innerHTML">Registration opens {displayOpening()}. Registration closes {displayDeadline(event.closesAt)}.</div>
       </div>
@@ -95,9 +95,29 @@ export function Home() {
       <h2 id="race-day-title">Race day</h2>
       <dl class="race-day-details">
         <div class="stitched-panel tone-sage"><dt>Location</dt><dd><strong>{event.venue}</strong><span>{event.address}</span></dd></div>
-        <div class="stitched-panel tone-gold"><dt>Schedule</dt><dd><strong>{event.raceDate}</strong><span>{event.raceTimes}</span></dd></div>
-        <div class="stitched-panel tone-lavender"><dt>Check-in</dt><dd>Save your race number for check-in.</dd></div>
+        <div class="stitched-panel tone-gold"><dt>Schedule</dt><dd><strong>{event.raceDate}</strong><span>Times below are approximate.</span></dd></div>
+        <div class="stitched-panel tone-lavender"><dt>Check-in</dt><dd>Bring your car with its race number visible and an arrow on the bottom.</dd></div>
       </dl>
+      <ol class="schedule-list" aria-label="Race schedule by group">
+        {raceSchedule.map((slot, index) => <li class={"schedule-card stitched-panel " + scheduleTones[index % scheduleTones.length]}>
+          <h3>{slot.group}</h3>
+          <dl>
+            <div><dt>Check-in ends</dt><dd>{slot.checkInEnds}</dd></div>
+            {slot.votingEnds && <div><dt>Voting ends</dt><dd>{slot.votingEnds}</dd></div>}
+            <div><dt>Racing</dt><dd>{slot.racing}</dd></div>
+            {slot.awards && <div><dt>Awards &amp; pictures</dt><dd>{slot.awards}</dd></div>}
+          </dl>
+        </li>)}
+      </ol>
+    </section>
+    <section id="volunteer" class="volunteer-section" aria-labelledby="volunteer-title">
+      <div class="volunteer-panel stitched-panel tone-lavender">
+        <div>
+          <h2 id="volunteer-title">Interested in volunteering?</h2>
+          <p>Race day runs on volunteers, from Friday night set-up to check-in, track crew, and clean-up. You don't need a racer to help. Pick a role on the volunteer page or when you register a racer, or email <a href={"mailto:" + event.contactEmail}>{event.contactEmail}</a>.</p>
+        </div>
+        <a class="button" href="/volunteer">Sign up to volunteer</a>
+      </div>
     </section>
     <section class="awards" aria-labelledby="awards-title">
       <div class="awards-heading"><h2 id="awards-title">Awards</h2></div>
@@ -131,14 +151,41 @@ export function Home() {
     </dialog>
   </Layout>;
 }
+const scheduleTones = ["tone-sage", "tone-gold", "tone-lavender"];
 function EventPhoto({ name, alt }: { name: string; alt: string }) {
   return <a class="gallery-photo" href={"/images/" + name + ".jpg"} data-gallery-photo hx-boost="false" aria-label={"View photo: " + alt} aria-haspopup="dialog"><img class="event-photo" src={"/images/" + name + "-small.jpg"} width="700" height="525" loading="lazy" decoding="async" alt={alt} /></a>;
 }
 export function RegisterPage() {
   return <Layout title="Register" page="register"><section class="registration-page">
-    <header class="page-heading illustrated-heading"><div><h1>Register a racer</h1></div><DerbyPatch motif="flag" /></header>
+    <header class="page-heading illustrated-heading"><div><h1>Register a racer</h1><p>Your race number appears when you finish. Write it down, because we don't send confirmation emails.</p></div><DerbyPatch motif="flag" /></header>
     <div id="registration-panel" class="paper registration-paper stitched-panel tone-sage" aria-label="Registration" hx-get="/api/registration-form" hx-trigger="load" hx-swap="innerHTML"><p class="loading" role="status">Loading</p><noscript>Please enable JavaScript to register.</noscript></div>
   </section></Layout>;
+}
+export function VolunteerPage() {
+  return <Layout title="Volunteer" page="volunteer"><section class="registration-page">
+    <header class="page-heading illustrated-heading"><div><h1>Volunteer</h1><p>Help run race day. You don't need to register a racer to volunteer.</p></div><DerbyPatch /></header>
+    <div id="volunteer-panel" class="paper registration-paper stitched-panel tone-lavender" aria-label="Volunteer sign-up" hx-get="/api/volunteer-form" hx-trigger="load" hx-swap="innerHTML"><p class="loading" role="status">Loading</p><noscript>Please enable JavaScript to sign up.</noscript></div>
+  </section></Layout>;
+}
+export function VolunteerForm({ csrf, submissionId, values = {}, errors = {}, open }: { csrf: string; submissionId: string; values?: FormValues; errors?: Errors; open?: OpenSlots }) {
+  const field = (props: FieldProps) => <Field {...props} values={values} errors={errors} />;
+  return <form action="/api/volunteer" method="post" hx-post="/api/volunteer" hx-target="this" hx-swap="outerHTML" hx-disable="find button[type='submit']">
+    <h2 class="sr-only">Volunteer details</h2>
+    <ErrorSummary errors={errors} /><input type="hidden" name="csrf" value={csrf} /><input type="hidden" name="submissionId" value={submissionId} />
+    <div class="honey" aria-hidden="true"><label for="website">Leave this empty</label><input id="website" name="website" tabindex={-1} autocomplete="off" /></div>
+    <fieldset class="form-section"><legend>Your contact</legend>
+      <div class="contact-grid">{field({ name: "volunteerName", label: "Name", maxLength: 100, autocomplete: "name" })}{field({ name: "volunteerPhone", label: "Phone", maxLength: 20, type: "tel", autocomplete: "tel", inputmode: "tel" })}</div>
+    </fieldset>
+    <fieldset class="form-section volunteer"><legend>Roles</legend>
+      <RoleChecklist values={values} error={errors.volunteerRoles} open={open} hint="Choose any roles that work for you. An organizer will contact you to confirm." />
+    </fieldset>
+    <button class="button full" type="submit"><span class="idle-text">Sign up</span><span class="busy-text">Saving</span></button>
+  </form>;
+}
+export function VolunteerThanks({ volunteer }: { volunteer: Volunteer }) {
+  return <div class="message" role="status"><h2>Thanks, {volunteer.name}!</h2>
+    <p>You're signed up for {volunteerRoles.filter(role => volunteer.roles.includes(role.id)).map(role => role.label).join(", ")}. An organizer will contact you at {volunteer.phone}.</p>
+    <a class="text-link" href="/">Back to the derby</a></div>;
 }
 export function GuidePage() {
   const contactEmail = "mailto:" + event.contactEmail;
@@ -150,7 +197,7 @@ export function GuidePage() {
         <p class="pickup-fee">Bring <strong>$10 per registered racer</strong> for event registration and your car kit.</p>
         <div class="pickup-details">
           <div><h3>Where</h3><address>4804 NW 2nd Court<br />Ankeny, IA 50023</address><p class="guide-note">Check your GPS: it should take you to the intersection of Abbie Dr and 2nd Street.</p></div>
-          <div><h3>When</h3><dl class="pickup-hours"><div><dt>Monday–Friday</dt><dd>6–9 pm</dd></div><div><dt>Saturday–Sunday</dt><dd>9 am–9 pm</dd></div></dl><p class="pickup-unavailable">No pickup December 20–28.</p></div>
+          <div><h3>When</h3><dl class="pickup-hours"><div><dt>Monday-Friday</dt><dd>6-9 pm</dd></div><div><dt>Saturday-Sunday</dt><dd>9 am-9 pm</dd></div></dl><p class="pickup-unavailable">No pickup December 20-28.</p></div>
         </div>
         <p>Pickup is self-service, so there’s no need to call. Car kits are in a box by the front door. Leave your payment in the envelope provided.</p>
         <p>If these times don’t work for you, email <a href={contactEmail}>{event.contactEmail}</a>.</p>
@@ -159,6 +206,10 @@ export function GuidePage() {
     </section>
     <section id="car-rules" class="guide-section" aria-labelledby="rules-title">
       <h2 id="rules-title">Rules &amp; guidelines</h2>
+      <div class="callout guide-callout" role="note"><strong>Every car needs these to race</strong><ul>
+        <li><strong>Your race number, visible on the car.</strong> You get it when you register online.</li>
+        <li><strong>An arrow on the bottom of the car</strong> pointing the way you want it to go down the track.</li>
+      </ul></div>
       <div class="guide-rules-grid">
         <div class="specification-panel stitched-panel tone-gold"><h3>Car specifications</h3><p class="guide-note">Most measurements match the kit’s original block of wood.</p>
           <dl class="car-specifications">
@@ -168,11 +219,10 @@ export function GuidePage() {
             <div><dt>Maximum weight</dt><dd>5 ounces</dd></div>
             <div><dt>Minimum width between wheels</dt><dd>1¾ inches</dd></div>
             <div><dt>Minimum bottom clearance</dt><dd>⅜ inch</dd></div>
-            <div><dt>Distance between axles</dt><dd>4⅜–4½ inches</dd></div>
+            <div><dt>Distance between axles</dt><dd>4⅜-4½ inches</dd></div>
           </dl>
         </div>
         <div><h3>General rules</h3><ul class="guide-list">
-          <li>Display your assigned race number on top of the car. Your number is provided when you register online.</li>
           <li>Bearings, washers, and bushings are not permitted on wheels. Washers may be used as car weights.</li>
           <li>The car must not ride on springs.</li>
           <li>Only official Cub Scout Grand Prix Pinewood Derby wheels and axles are permitted.</li>
@@ -203,8 +253,7 @@ export function GuidePage() {
           <h3>Paint &amp; decorations</h3>
           <p>There are plenty of pinewood derby design ideas online. Todd’s family has had good results with Crayola washable kids’ paint, including glitter and metallic colors. Let your Scout choose a design that feels like her own.</p>
           <p>The local Boy Scout store carries approved accessories and decals:</p>
-          <address><strong>Mid-Iowa Scout Shop</strong><br />7900 Hickman Road<br />Windsor Heights, IA 50324</address>
-          <p>Call <a href="tel:+15152655990">(515) 265-5990</a> before visiting to confirm shop hours at the new location.</p>
+          <address><strong>Mid-Iowa Scout Shop</strong><br />7900 Hickman Road<br />Windsor Heights, IA 50324<br /><a href="tel:+15152655990">(515) 265-5990</a></address>
           </div>
         </div>
     </section>
@@ -223,18 +272,63 @@ export function ErrorSummary({ errors }: { errors: Errors }) {
   if (!Object.keys(errors).length) return null;
   return <div class="validation-summary" role="alert" tabindex={-1}><strong>Please check your entry.</strong><ul>{Object.entries(errors).map(([key, text]) => <li>{key === "form" ? text : <a href={"#" + key}>{text}</a>}</li>)}</ul></div>;
 }
-export function ParticipantFields({ values = {}, errors = {} }: { values?: FormValues; errors?: Errors }) {
-  const field = (name: "firstName" | "lastInitial" | "troopNumber", label: string, maxLength: number, hint?: string) => <div class="field"><label for={name}>{label}</label><input id={name} name={name} required maxlength={maxLength} pattern={name === "lastInitial" ? "[A-Za-z]" : undefined} autocapitalize={name === "lastInitial" ? "characters" : undefined} value={values[name] || ""} autocomplete="off" inputmode={name === "troopNumber" ? "numeric" : "text"} aria-invalid={errors[name] ? "true" : undefined} aria-describedby={errors[name] ? name + "-error" : hint ? name + "-hint" : undefined} />{errors[name] ? <p id={name + "-error"} class="field-error">{errors[name]}</p> : hint ? <p id={name + "-hint"} class="field-hint">{hint}</p> : null}</div>;
-  return <><div class="name-grid">{field("firstName", "First name", 60)}{field("lastInitial", "Last initial", 1)}</div><div class="field"><label for="level">Troop level</label><select id="level" name="level" required aria-invalid={errors.level ? "true" : undefined} aria-describedby={errors.level ? "level-error" : undefined}><option value="" selected={!values.level}>Choose a level</option>{levels.map(level => <option value={level} selected={values.level === level}>{level}</option>)}</select>{errors.level && <p id="level-error" class="field-error">{errors.level}</p>}</div>{field("troopNumber", "Troop number", 10)}</>;
+type TextFieldName = "firstName" | "lastName" | "troopNumber" | "parentName" | "parentPhone" | "emergencyName" | "emergencyPhone" | "volunteerName" | "volunteerPhone";
+type FieldProps = { name: TextFieldName; label: string; maxLength: number; hint?: string; required?: boolean; type?: "text" | "tel"; autocomplete?: string; inputmode?: "text" | "numeric" | "tel" };
+function Field({ name, label, maxLength, hint, required = true, type = "text", autocomplete = "off", inputmode = "text", values, errors }: FieldProps & { values: FormValues; errors: Errors }) {
+  const error = errors[name];
+  return <div class="field"><label for={name}>{label}</label><input id={name} name={name} type={type} required={required} maxlength={maxLength} value={values[name] || ""} autocomplete={autocomplete} inputmode={inputmode} aria-invalid={error ? "true" : undefined} aria-describedby={error ? name + "-error" : hint ? name + "-hint" : undefined} />{error ? <p id={name + "-error"} class="field-error">{error}</p> : hint ? <p id={name + "-hint"} class="field-hint">{hint}</p> : null}</div>;
 }
-type FormProps = { csrf: string; submissionId: string; values?: FormValues; errors?: Errors; organizer?: boolean };
-export function RegistrationForm({ csrf, submissionId, values, errors, organizer = false }: FormProps) {
+type OpenSlots = Record<VolunteerRole, number>;
+function RoleChecklist({ values, error, open, hint }: { values: FormValues; error?: string; open?: OpenSlots; hint: string }) {
+  return <fieldset id="volunteerRoles" class="volunteer-roles" tabindex={-1} aria-describedby={error ? "volunteerRoles-error" : "volunteerRoles-hint"}>
+    <legend class="sr-only">Volunteer roles</legend>
+    {error ? <p id="volunteerRoles-error" class="field-error">{error}</p> : <p id="volunteerRoles-hint" class="field-hint">{hint}</p>}
+    <ul class="role-list">{volunteerRoles.map(role => {
+      const left = open?.[role.id];
+      const full = left === 0;
+      return <li><label class="check role"><input type="checkbox" name="volunteerRoles" value={role.id} checked={!full && values.volunteerRoles?.includes(role.id)} disabled={full} />
+        <span class="role-text"><strong>{role.label}</strong><span class="role-meta">{role.when}</span><span>{role.description}</span>{left !== undefined && <span class="role-open">{full ? "Full" : `${left} of ${role.slots} open`}</span>}</span>
+      </label></li>;
+    })}</ul>
+  </fieldset>;
+}
+function VolunteerOptIn({ values, errors, open }: { values: FormValues; errors: Errors; open?: OpenSlots }) {
+  return <fieldset class="form-section volunteer"><legend>Volunteering</legend>
+    <label class="check"><input type="checkbox" id="volunteer" name="volunteer" value="yes" checked={values.volunteer} /><span>I'm interested in volunteering</span></label>
+    <RoleChecklist values={values} error={errors.volunteerRoles} open={open} hint="An organizer will contact you to confirm." />
+  </fieldset>;
+}
+export function ParticipantFields({ values = {}, errors = {} }: { values?: FormValues; errors?: Errors }) {
+  const field = (props: FieldProps) => <Field {...props} values={values} errors={errors} />;
+  return <>
+    <fieldset class="form-section"><legend>Racer</legend>
+      <div class="name-grid">{field({ name: "firstName", label: "First name", maxLength: 60 })}{field({ name: "lastName", label: "Last name", maxLength: 60 })}</div>
+      <div class="field"><label for="level">Troop level</label><select id="level" name="level" required aria-invalid={errors.level ? "true" : undefined} aria-describedby={errors.level ? "level-error" : undefined}><option value="" selected={!values.level}>Choose a level</option>{levels.map(level => <option value={level} selected={values.level === level}>{levelLabels[level]}</option>)}</select>{errors.level && <p id="level-error" class="field-error">{errors.level}</p>}</div>
+      {field({ name: "troopNumber", label: "Troop number", maxLength: 10, inputmode: "numeric", required: false, hint: "Optional for Outlaw racers." })}
+    </fieldset>
+    <fieldset class="form-section"><legend>Parent or guardian</legend>
+      <div class="contact-grid">{field({ name: "parentName", label: "Name", maxLength: 100, autocomplete: "name" })}{field({ name: "parentPhone", label: "Phone", maxLength: 20, type: "tel", autocomplete: "tel", inputmode: "tel" })}</div>
+    </fieldset>
+    <fieldset class="form-section" aria-describedby="emergency-hint"><legend>Emergency contact</legend>
+      <p id="emergency-hint" class="field-hint">Someone who won't be at the race and can be reached that day.</p>
+      <div class="contact-grid">{field({ name: "emergencyName", label: "Name", maxLength: 100 })}{field({ name: "emergencyPhone", label: "Phone", maxLength: 20, type: "tel", inputmode: "tel" })}</div>
+    </fieldset>
+    <fieldset class="form-section"><legend>Photos</legend>
+      <label class="check"><input type="checkbox" name="photoConsent" value="yes" checked={values.photoConsent} /><span>Ankeny Girl Scouts may share photos of my racer from the derby.</span></label>
+      <p class="field-hint">Leave this unchecked if you'd rather we not share photos of your racer.</p>
+    </fieldset>
+  </>;
+}
+type FormProps = { csrf: string; submissionId: string; values?: FormValues; errors?: Errors; organizer?: boolean; open?: OpenSlots };
+export function RegistrationForm({ csrf, submissionId, values, errors, organizer = false, open }: FormProps) {
   const action = organizer ? "/api/admin/register" : "/api/register";
   return <form action={action} method="post" hx-post={action} hx-target="this" hx-swap="outerHTML" hx-disable="find button[type='submit']">
     <h2 class={organizer ? undefined : "sr-only"}>{organizer ? "Add a racer" : "Racer details"}</h2>
     <ErrorSummary errors={errors || {}} /><input type="hidden" name="csrf" value={csrf} /><input type="hidden" name="submissionId" value={submissionId} />
     <div class="honey" aria-hidden="true"><label for="website">Leave this empty</label><input id="website" name="website" tabindex={-1} autocomplete="off" /></div>
     <ParticipantFields values={values} errors={errors} />
+    <VolunteerOptIn values={values || {}} errors={errors || {}} open={open} />
+    {!organizer && <div class="callout" role="note"><strong>Adult supervision</strong><p>An adult needs to stay with each racer on race day. Please check with your troop leader that your troop has enough adults to supervise its girls.</p></div>}
     <button class="button full" type="submit"><span class="idle-text">{organizer ? "Add racer" : "Register"}</span><span class="busy-text">Saving</span></button>
     {organizer && <a class="text-link" href="/admin" hx-boost="false">Back to roster</a>}
   </form>;
@@ -244,12 +338,13 @@ export function Receipt({ row }: { row: Registration }) {
     <div class="receipt-heading"><span class="small-tag">PINEWOOD DERBY 2027</span><DerbyPatch motif="flag" /></div>
     <h1>Registration complete</h1>
     <div class="race-number-patch stitched-panel tone-gold"><p class="receipt-label">YOUR RACE NUMBER</p>
-    <div class="race-number">{String(row.raceNumber).padStart(2, "0")}</div></div>
+    <div class="race-number">{String(row.raceNumber).padStart(2, "0")}</div>
+    <p class="write-down">Write this number down</p></div>
     <ol class="receipt-reminders" aria-label="Before race day">
-      <li><strong>Save your race number.</strong> You’ll need it at check-in. Take a screenshot or print this receipt.</li>
-      <li><strong><a href="/guide">Visit the car guide</a>.</strong> Find car requirements and kit pickup details before race day.</li>
+      <li><strong>Write down your race number.</strong> Make sure it's visible on the car, and take a screenshot or print this receipt.</li>
+      <li><strong><a href="/guide">Visit the car guide</a>.</strong> Draw an arrow on the bottom of the car pointing to the front, and check the car rules and kit pickup details.</li>
     </ol>
-    <dl class="receipt-details"><div><dt>Racer</dt><dd>{row.firstName} {row.lastInitial}.</dd></div><div><dt>Troop level</dt><dd>{row.level}</dd></div><div><dt>Troop number</dt><dd>{row.troopNumber}</dd></div><div><dt>Race day</dt><dd>{event.raceDate}</dd></div></dl>
+    <dl class="receipt-details"><div><dt>Racer</dt><dd>{row.firstName} {row.lastName}</dd></div><div><dt>Troop level</dt><dd>{levelLabels[row.level]}</dd></div><div><dt>Troop number</dt><dd>{row.troopNumber || "None"}</dd></div><div><dt>Race day</dt><dd>{event.raceDate}</dd></div></dl>
     <div class="receipt-actions"><button class="button" type="button" data-copy-receipt><Icon name="copy" />Copy confirmation link</button><button class="button secondary" type="button" data-print><Icon name="printer" />Print receipt</button></div>
     <p id="copy-status" role="status" class="field-hint"></p>
     <a href="/register" class="text-link">Register another racer</a>
@@ -258,12 +353,27 @@ export function Receipt({ row }: { row: Registration }) {
 export function Roster({ rows, search = "" }: { rows: Registration[]; search?: string }) {
   const counts = new Map<string, number>();
   rows.forEach(row => counts.set(duplicateKey(row), (counts.get(duplicateKey(row)) || 0) + 1));
-  const visible = rows.filter(r => `${r.firstName} ${r.lastInitial} ${r.troopNumber} ${r.raceNumber} ${r.level}`.toLowerCase().includes(search.toLowerCase()));
-  return <div id="roster"><p class="roster-notice"><strong>Rosters are deleted on February 8, 2027.</strong> Download your final roster before then.</p><div class="roster-count"><strong>{rows.length}</strong> racers</div>{visible.length ? <div class="table-scroll"><table><caption class="sr-only">Registered racers</caption><thead><tr><th scope="col"><span class="sr-only">Actions</span></th><th scope="col">Race #</th><th scope="col">Racer</th><th scope="col">Level</th><th scope="col">Troop</th></tr></thead><tbody>{visible.map(row => <tr><td><button class="text-button" type="button" hx-get={"/api/admin/edit/" + row.id} hx-target="#editor" hx-swap="innerHTML" aria-label={"Edit racer " + row.raceNumber}><Icon name="pencil" />Edit</button></td><td class="number-cell">{row.raceNumber}</td><td>{row.firstName} {row.lastInitial}.{(counts.get(duplicateKey(row)) || 0) > 1 && <span class="duplicate-tag">Possible duplicate</span>}</td><td>{row.level}</td><td>{row.troopNumber}</td></tr>)}</tbody></table></div> : <div class="empty"><h2>{search ? "No matching racers." : "The starting grid is open."}</h2><p>{search ? "Try another name, troop, level, or race number." : "Registrations will appear here as families sign up."}</p></div>}</div>;
+  const visible = rows.filter(r => `${r.firstName} ${r.lastName} ${r.troopNumber} ${r.raceNumber} ${r.level}`.toLowerCase().includes(search.toLowerCase()));
+  return <div id="roster"><p class="roster-notice"><strong>Rosters are deleted on February 8, 2027.</strong> Download your final roster before then.</p><div class="roster-count"><strong>{rows.length}</strong> racers</div>{visible.length ? <div class="table-scroll"><table><caption class="sr-only">Registered racers</caption><thead><tr><th scope="col"><span class="sr-only">Actions</span></th><th scope="col">Race #</th><th scope="col">Racer</th><th scope="col">Level</th><th scope="col">Troop</th></tr></thead><tbody>{visible.map(row => <tr><td><button class="text-button" type="button" hx-get={"/api/admin/edit/" + row.id} hx-target="#editor" hx-swap="innerHTML" aria-label={"Edit racer " + row.raceNumber}><Icon name="pencil" />Edit</button></td><td class="number-cell">{row.raceNumber}</td><td>{row.firstName} {row.lastName}{(counts.get(duplicateKey(row)) || 0) > 1 && <span class="duplicate-tag">Possible duplicate</span>}{!row.photoConsent && <span class="roster-tags"><span class="roster-tag">No photos</span></span>}</td><td>{row.level}</td><td>{row.troopNumber}</td></tr>)}</tbody></table></div> : <div class="empty"><h2>{search ? "No matching racers." : "The starting grid is open."}</h2><p>{search ? "Try another name, troop, level, or race number." : "Registrations will appear here as families sign up."}</p></div>}</div>;
 }
-export function Dashboard({ rows }: { rows: Registration[] }) {
-  return <><div class="admin-toolbar"><label class="search-label"><span class="sr-only">Search registrations</span><input type="search" name="q" placeholder="Search name, troop, level, or number" hx-get="/api/admin/roster" hx-trigger="input changed delay:250ms, search" hx-target="#roster" hx-swap="outerHTML" /></label><a class="button secondary" href="/api/admin/export" download><Icon name="download" />Export CSV</a><button class="button" hx-get="/api/admin/new" hx-target="#editor" type="button"><Icon name="user-plus" />Add racer</button></div><div id="editor"></div><Roster rows={rows} /></>;
+export function Dashboard({ rows, volunteers, csrf }: { rows: Registration[]; volunteers: Volunteer[]; csrf: string }) {
+  return <><div class="admin-toolbar"><label class="search-label"><span class="sr-only">Search registrations</span><input type="search" name="q" placeholder="Search name, troop, level, or number" hx-get="/api/admin/roster" hx-trigger="input changed delay:250ms, search" hx-target="#roster" hx-swap="outerHTML" /></label><a class="button secondary" href="/api/admin/export" download><Icon name="download" />Export CSV</a><a class="button secondary" href="/api/admin/export/contacts" download><Icon name="download" />Contacts CSV</a><a class="button secondary" href="/api/admin/export/volunteers" download><Icon name="download" />Volunteers CSV</a><button class="button" hx-get="/api/admin/new" hx-target="#editor" type="button"><Icon name="user-plus" />Add racer</button></div><div id="editor"></div><Roster rows={rows} /><VolunteerSummary volunteers={volunteers} csrf={csrf} /></>;
 }
-export function EditForm({ row, csrf, errors = {} }: { row: Registration; csrf: string; errors?: Errors }) {
-  return <form class="paper editor-form" action={"/api/admin/edit/" + row.id} method="post" hx-post={"/api/admin/edit/" + row.id} hx-target="this" hx-swap="outerHTML" hx-disable="find button[type='submit']"><p class="small-tag">RACE NUMBER {row.raceNumber}</p><h2>Edit registration</h2><ErrorSummary errors={errors} /><input type="hidden" name="csrf" value={csrf} /><input type="hidden" name="etag" value={row._etag || ""} /><ParticipantFields values={row} errors={errors} /><p class="field-hint level-change-note">Changing the troop level assigns a new race number.</p><div class="receipt-actions"><button class="button" type="submit">Save changes</button><a href="/admin" hx-boost="false" class="button secondary">Back to roster</a></div><p><a href={"/api/admin/receipt/" + row.id} class="text-link" target="_blank" rel="noopener">View confirmation <Icon name="external-link" /></a></p></form>;
+function VolunteerSummary({ volunteers, csrf }: { volunteers: Volunteer[]; csrf: string }) {
+  return <section id="volunteer-summary" class="volunteer-summary" aria-labelledby="volunteer-summary-title"><h2 id="volunteer-summary-title">Volunteers</h2><ul class="summary-roles">{volunteerRoles.map(role => {
+    const people = volunteers.filter(volunteer => volunteer.roles.includes(role.id));
+    return <li><strong>{role.label}</strong><span class="summary-count">{people.length} of {role.slots} filled</span>
+      {people.length ? <ul class="summary-people">{people.map(person => <li>
+        <Icon name="user" /><span class="summary-person"><span>{person.name}</span><a href={"tel:" + person.phone.replace(/\D/g, "")}>{person.phone}</a></span>
+        <form hx-post={"/api/admin/volunteers/" + encodeURIComponent(person.id) + "/remove"} hx-confirm={`Remove ${person.name} from ${role.label}?`}>
+          <input type="hidden" name="csrf" value={csrf} /><input type="hidden" name="role" value={role.id} />
+          <button class="text-button" type="submit" aria-label={`Remove ${person.name} from ${role.label}`}><Icon name="x" /></button>
+        </form>
+      </li>)}</ul> : <span class="summary-names">Open</span>}
+    </li>;
+  })}</ul></section>;
+}
+type EditProps = { row: Registration; csrf: string; errors?: Errors; values?: FormValues; etag?: string };
+export function EditForm({ row, csrf, errors = {}, values = row, etag = row._etag || "" }: EditProps) {
+  return <form class="paper editor-form" action={"/api/admin/edit/" + row.id} method="post" hx-post={"/api/admin/edit/" + row.id} hx-target="this" hx-swap="outerHTML" hx-disable="find button[type='submit']"><p class="small-tag">RACE NUMBER {row.raceNumber}</p><h2>Edit registration</h2><ErrorSummary errors={errors} /><input type="hidden" name="csrf" value={csrf} /><input type="hidden" name="etag" value={etag} /><ParticipantFields values={values} errors={errors} /><p class="field-hint level-change-note">Changing the troop level assigns a new race number.</p><div class="receipt-actions"><button class="button" type="submit">Save changes</button><a href="/admin" hx-boost="false" class="button secondary">Back to roster</a></div><p><a href={"/api/admin/receipt/" + row.id} class="text-link" target="_blank" rel="noopener">View confirmation <Icon name="external-link" /></a></p></form>;
 }

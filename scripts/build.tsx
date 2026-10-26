@@ -1,11 +1,11 @@
 import { mkdir, cp, writeFile } from "node:fs/promises";
 import { watch } from "node:fs";
 import { build } from "esbuild";
-import { Home, RegisterPage, GuidePage, ConfirmationPage, AdminPage, Layout } from "../src/views.js";
+import { Home, RegisterPage, GuidePage, VolunteerPage, ConfirmationPage, AdminPage, Layout } from "../src/views.js";
 
 async function buildSite() {
   await mkdir("dist/site", { recursive: true });
-  const pages = { "index.html": <Home />, "register/index.html": <RegisterPage />, "guide/index.html": <GuidePage />, "confirmation/index.html": <ConfirmationPage />, "admin/index.html": <AdminPage />,
+  const pages = { "index.html": <Home />, "register/index.html": <RegisterPage />, "guide/index.html": <GuidePage />, "volunteer/index.html": <VolunteerPage />, "confirmation/index.html": <ConfirmationPage />, "admin/index.html": <AdminPage />,
     "403.html": <Layout title="Organizer access required" page="error"><section class="narrow"><p class="eyebrow">ORGANIZER ACCESS</p><h1>Organizer access required</h1><p>Use the Microsoft account invited by an organizer. Signing in alone does not grant access.</p><a class="button" href="/.auth/logout?post_logout_redirect_uri=/admin" hx-boost="false">Try another account</a></section></Layout>,
     "404.html": <Layout title="Page not found" page="error"><section class="narrow"><h1>Page not found</h1><p>This page wasn’t found.</p><a class="button" href="/">Back to the derby</a></section></Layout> };
   for (const [path, component] of Object.entries(pages)) {

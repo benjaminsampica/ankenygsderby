@@ -1,8 +1,8 @@
 import { CosmosClient, type Container, type OperationInput } from "@azure/cosmos";
 import { readFileSync } from "node:fs";
-import { event, levels, raceNumberStarts } from "./event.js";
-import { allocateRaceNumber, initialState, Problem, registrationOpen, registrationStatus, remainingTtl, submissionHash,
-  type EventState, type Participant, type Registration } from "./domain.js";
+import { event, levels, raceNumberStarts, type VolunteerRole } from "./event.js";
+import { allocateRaceNumber, claimVolunteerSlots, initialState, Problem, registrationOpen, registrationStatus, remainingTtl, submissionHash,
+  volunteerHash, volunteerSignupOpen, type EventState, type Participant, type Registration, type Volunteer, type VolunteerSignup } from "./domain.js";
 
 const codeOf = (error: unknown) => Number((error as { code?: number })?.code);
 const clean = <T extends object>(value: T) => Object.fromEntries(Object.entries(value).filter(([key]) => !key.startsWith("_"))) as T;
@@ -13,6 +13,14 @@ function batchSucceeded(result: Awaited<ReturnType<Container["items"]["batch"]>>
   if ([409, 412, 424, 429].includes(code)) return false;
   throw new Error("Registration transaction failed: " + code);
 }
+// Rows saved before the contact fields existed stay readable until an organizer edits them.
+const withDefaults = (row: Registration & { lastInitial?: string }): Registration => {
+  const defaults = { lastName: row.lastInitial ?? "", parentName: "", parentPhone: "", emergencyName: "", emergencyPhone: "", photoConsent: false };
+  return { ...defaults, ...row };
+};
+const uuidPattern = /^[\da-f]{8}-[\da-f]{4}-4[\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/i;
+// One volunteer document per submission, so retries find the earlier sign-up.
+const volunteerId = (submissionId: string) => "volunteer:" + submissionId;
 const backoff = (attempt: number) => new Promise(resolve => setTimeout(resolve, Math.min(20 * (attempt + 1), 300) + Math.random() * 50));
 
 export class DerbyStore {
@@ -50,7 +58,7 @@ export class DerbyStore {
     if (!/^(registration:)?[\da-f]{8}-[\da-f]{4}-4[\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/i.test(id)) return undefined;
     try {
       const { resource } = await this.container.item(id, this.eventId).read<Registration>();
-      return resource && resource.kind === "registration" && Date.parse(resource.expiresAt) > Date.now() ? resource : undefined;
+      return resource && resource.kind === "registration" && Date.parse(resource.expiresAt) > Date.now() ? withDefaults(resource) : undefined;
     } catch (error) { if (codeOf(error) === 404) return undefined; throw error; }
   }
   async list(): Promise<Registration[]> {
@@ -58,10 +66,10 @@ export class DerbyStore {
       query: "SELECT * FROM c WHERE c.eventId = @event AND c.kind = 'registration' AND c.expiresAt > @now",
       parameters: [{ name: "@event", value: this.eventId }, { name: "@now", value: new Date().toISOString() }],
     }, { partitionKey: this.eventId }).fetchAll();
-    return resources.sort((a, b) => a.raceNumber - b.raceNumber);
+    return resources.map(withDefaults).sort((a, b) => a.raceNumber - b.raceNumber);
   }
-  async register(participant: Participant, submissionId: string, organizer = false): Promise<Registration> {
-    if (!/^[\da-f]{8}-[\da-f]{4}-4[\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/i.test(submissionId))
+  async register(participant: Participant, submissionId: string, organizer = false, volunteerRoles: VolunteerRole[] = []): Promise<Registration> {
+    if (!uuidPattern.test(submissionId))
       throw new Problem(400, "Reload the form before submitting.");
     const id = submissionId;
     const fingerprint = submissionHash(participant);
@@ -74,15 +82,19 @@ export class DerbyStore {
       const settings = await this.settings();
       if (!organizer && !registrationOpen()) throw new Problem(409, registrationStatus());
       const { raceNumber, nextNumbers } = allocateRaceNumber(settings, participant.level);
+      const volunteerCounts = claimVolunteerSlots(settings.volunteerCounts, [], volunteerRoles);
       const row: Registration = {
         ...participant, id, kind: "registration", eventId: this.eventId, raceNumber,
         createdAt: new Date().toISOString(), expiresAt: event.expiresAt,
         ttl: remainingTtl(event.expiresAt), submissionHash: fingerprint,
       };
       const operations: OperationInput[] = [
-        { operationType: "Replace", id: "settings", resourceBody: { ...clean(settings), nextNumbers }, ifMatch: settings._etag },
+        { operationType: "Replace", id: "settings", resourceBody: { ...clean(settings), nextNumbers, volunteerCounts }, ifMatch: settings._etag },
         { operationType: "Create", resourceBody: row },
       ];
+      // Registering families volunteer with the parent or guardian contact.
+      if (volunteerRoles.length) operations.push({ operationType: "Create",
+        resourceBody: this.volunteerDocument(volunteerId(id), { name: participant.parentName, phone: participant.parentPhone, roles: volunteerRoles }, id) });
       const result = await this.container.items.batch(operations, this.eventId);
       // A batch can return HTTP 207 with failed operations. Commit is successful
       // only when every operation succeeded, not merely when transport was 2xx.
@@ -122,6 +134,66 @@ export class DerbyStore {
     }
   }
 
+  private volunteerDocument(id: string, signup: VolunteerSignup, registrationId?: string): Volunteer {
+    return { ...signup, id, kind: "volunteer", eventId: this.eventId, registrationId, createdAt: new Date().toISOString(),
+      expiresAt: event.expiresAt, ttl: remainingTtl(event.expiresAt), submissionHash: volunteerHash(signup) };
+  }
+  async getVolunteer(id: string): Promise<Volunteer | undefined> {
+    if (!uuidPattern.test(id.replace(/^volunteer:/, ""))) return undefined;
+    try {
+      const { resource } = await this.container.item(id, this.eventId).read<Volunteer>();
+      return resource && resource.kind === "volunteer" && Date.parse(resource.expiresAt) > Date.now() ? resource : undefined;
+    } catch (error) { if (codeOf(error) === 404) return undefined; throw error; }
+  }
+  async listVolunteers(): Promise<Volunteer[]> {
+    const { resources } = await this.container.items.query<Volunteer>({
+      query: "SELECT * FROM c WHERE c.eventId = @event AND c.kind = 'volunteer' AND c.expiresAt > @now",
+      parameters: [{ name: "@event", value: this.eventId }, { name: "@now", value: new Date().toISOString() }],
+    }, { partitionKey: this.eventId }).fetchAll();
+    return resources.sort((a, b) => a.name.localeCompare(b.name));
+  }
+  async registerVolunteer(signup: VolunteerSignup, submissionId: string): Promise<Volunteer> {
+    if (!uuidPattern.test(submissionId)) throw new Problem(400, "Reload the form before submitting.");
+    const id = volunteerId(submissionId), fingerprint = volunteerHash(signup);
+    for (let attempt = 0; attempt < 30; attempt++) {
+      const existing = await this.getVolunteer(id);
+      if (existing) {
+        if (existing.submissionHash !== fingerprint) throw new Problem(409, "This sign-up was already saved with different details. Open a new volunteer form.");
+        return existing;
+      }
+      if (!volunteerSignupOpen()) throw new Problem(409, "Volunteer sign-up is closed. Contact an organizer to help.");
+      const settings = await this.settings();
+      const volunteerCounts = claimVolunteerSlots(settings.volunteerCounts, [], signup.roles);
+      const row = this.volunteerDocument(id, signup);
+      const result = await this.container.items.batch([
+        { operationType: "Replace", id: "settings", resourceBody: { ...clean(settings), volunteerCounts }, ifMatch: settings._etag },
+        { operationType: "Create", resourceBody: row },
+      ], this.eventId);
+      if (batchSucceeded(result, 2)) return row;
+      await backoff(attempt);
+    }
+    throw new Problem(503, "Volunteer sign-up is busy. Please try again; your form has been kept.");
+  }
+  // Removing a volunteer's last role deletes the sign-up.
+  async setVolunteerRoles(id: string, roles: VolunteerRole[]) {
+    for (let attempt = 0; attempt < 30; attempt++) {
+      const volunteer = await this.getVolunteer(id);
+      if (!volunteer) throw new Problem(404, "Volunteer not found or expired.");
+      const settings = await this.settings();
+      const volunteerCounts = claimVolunteerSlots(settings.volunteerCounts, volunteer.roles, roles);
+      const change: OperationInput = roles.length
+        ? { operationType: "Replace", id, resourceBody: { ...clean(volunteer), roles, submissionHash: volunteerHash({ ...volunteer, roles }) }, ifMatch: volunteer._etag }
+        // The settings etag already serializes volunteer changes.
+        : { operationType: "Delete", id };
+      const result = await this.container.items.batch([
+        { operationType: "Replace", id: "settings", resourceBody: { ...clean(settings), volunteerCounts }, ifMatch: settings._etag },
+        change,
+      ], this.eventId);
+      if (batchSucceeded(result, 2)) return;
+      await backoff(attempt);
+    }
+    throw new Problem(503, "Volunteers are busy. Please try again.");
+  }
 }
 
 let ready: Promise<DerbyStore> | undefined;

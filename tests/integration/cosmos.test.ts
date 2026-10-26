@@ -15,7 +15,10 @@ test("Cosmos: registration, concurrency, retry, edits, private UUID links, expir
   const { database } = await client.databases.create({ id: "derby-tests-" + randomUUID() });
   const { container } = await database.containers.create({ id: "event-data", partitionKey: { paths: ["/eventId"] }, defaultTtl: -1 });
   const store = new DerbyStore(container);
-  const racer: Participant = { firstName: "Avery", lastInitial: "S", level: "Brownie", troopNumber: "00123" };
+  const racer: Participant = { firstName: "Avery", lastName: "Smith", level: "Brownie", troopNumber: "00123", parentName: "Jordan Smith",
+    parentPhone: "(515) 555-0123", emergencyName: "Pat Lee", emergencyPhone: "(515) 555-0199", photoConsent: false };
+  // Form posts carry the text fields; checkboxes are left unchecked.
+  const racerForm = Object.fromEntries(Object.entries(racer).filter(([, value]) => typeof value === "string")) as Record<string, string>;
   const submissionId = randomUUID();
   try {
     await store.initialize();
@@ -29,7 +32,7 @@ test("Cosmos: registration, concurrency, retry, edits, private UUID links, expir
       const csrf = "a".repeat(64);
       const response = await app.request("/api/register", { method: "POST",
         headers: { origin: process.env.SITE_ORIGIN, cookie: "derby-csrf=" + csrf },
-        body: new URLSearchParams({ ...racer, csrf, submissionId: randomUUID() }) });
+        body: new URLSearchParams({ ...racerForm, csrf, submissionId: randomUUID() }) });
       assert.equal(response.status, 409);
       assert.match(await response.text(), /Registration opens December 4/);
       assert.equal((await earlyStore.list()).length, 0);
@@ -48,7 +51,7 @@ test("Cosmos: registration, concurrency, retry, edits, private UUID links, expir
       const csrf = /name="csrf" value="([^"]+)"/.exec(html)![1];
       const submissionId = /name="submissionId" value="([^"]+)"/.exec(html)![1];
       const headers = { cookie, origin: process.env.SITE_ORIGIN, "HX-Request": "true" };
-      const submit = () => app.request("/api/register", { method: "POST", headers, body: new URLSearchParams({ ...racer, csrf, submissionId }) });
+      const submit = () => app.request("/api/register", { method: "POST", headers, body: new URLSearchParams({ ...racerForm, csrf, submissionId }) });
       const first = await submit(), retry = await submit();
       assert.equal(first.status, 200);
       const location = first.headers.get("HX-Redirect")!;
@@ -57,7 +60,7 @@ test("Cosmos: registration, concurrency, retry, edits, private UUID links, expir
       const receipt = await app.request("/api/confirmation", { headers: { "X-Receipt-Token": location.split("#")[1] } });
       assert.equal(receipt.status, 200);
       assert.equal(receipt.headers.get("cache-control"), "no-store");
-      assert.match(await receipt.text(), /Avery S\./);
+      assert.match(await receipt.text(), /Avery Smith/);
       assert.equal((await app.request("/api/confirmation")).status, 404);
       const row = (await httpStore.list())[0];
       assert.equal(row.id, submissionId);
@@ -72,12 +75,14 @@ test("Cosmos: registration, concurrency, retry, edits, private UUID links, expir
       assert.equal(recovered.headers.get("location"), location);
       assert.equal((await app.request("/api/admin/receipt/" + row.id)).status, 403);
       const edit = await app.request("/api/admin/edit/" + row.id, { method: "POST", headers: adminHeaders,
-        body: new URLSearchParams({ ...racer, firstName: "Updated", csrf, etag: row._etag! }) });
+        body: new URLSearchParams({ ...racerForm, firstName: "Updated", csrf, etag: row._etag! }) });
       assert.equal(edit.status, 200);
       assert.equal(edit.headers.get("HX-Redirect"), "/admin");
       const csv = await app.request("/api/admin/export", { headers: adminHeaders });
       assert.equal(csv.status, 200);
-      assert.match(await csv.text(), /Updated/);
+      assert.match(await csv.text(), /"Updated","Smith"/);
+      const contacts = await app.request("/api/admin/export/contacts", { headers: adminHeaders });
+      assert.match(await contacts.text(), /"Updated","Smith","Brownie","00123","Jordan Smith","\(515\) 555-0123"/);
       assert.equal((await httpStore.list())[0].raceNumber, row.raceNumber);
       assert.equal((await app.request("/api/admin/export")).status, 403);
       const removedSettings = await app.request("/api/admin/settings", { method: "POST", headers: adminHeaders,
@@ -129,6 +134,45 @@ test("Cosmos: registration, concurrency, retry, edits, private UUID links, expir
       assert.equal((await legacy.register({ ...racer, level: "Daisy" }, randomUUID())).raceNumber, 100);
       await legacy.initialize();
       assert.equal((await legacy.settings()).nextNumbers.Brownie, 202);
+    });
+    await t.test("Outlaw racers number from 700 on settings saved before the class existed", async () => {
+      const outlaw = new DerbyStore(container, "outlaw-tests");
+      await outlaw.initialize();
+      const settings = await outlaw.settings();
+      const { Outlaw, ...olderNumbers } = settings.nextNumbers;
+      const { volunteerCounts, ...olderSettings } = settings;
+      await container.item("settings", outlaw.eventId).replace({ ...olderSettings, nextNumbers: olderNumbers });
+      assert.equal((await outlaw.register({ ...racer, level: "Outlaw", troopNumber: "" }, randomUUID())).raceNumber, 700);
+      assert.equal((await outlaw.register({ ...racer, level: "Outlaw", troopNumber: "" }, randomUUID())).raceNumber, 701);
+      assert.equal((await outlaw.settings()).nextNumbers.Outlaw, 702);
+    });
+    await t.test("volunteer slots hold under concurrent sign-ups and free up when an organizer removes a role", async () => {
+      const volunteers = new DerbyStore(container, "volunteer-tests");
+      await volunteers.initialize();
+      const sam = { name: "Sam Rivera", phone: "(515) 555-0144", roles: ["emcee" as const] };
+      const results = await Promise.allSettled(Array.from({ length: 4 }, () => volunteers.registerVolunteer(sam, randomUUID())));
+      assert.equal(results.filter(result => result.status === "fulfilled").length, 1);
+      for (const result of results) if (result.status === "rejected") assert.match(result.reason.message, /Emcee role is full/);
+      const retryId = randomUUID();
+      const first = await volunteers.registerVolunteer({ ...sam, roles: ["setup", "cleanup"] }, retryId);
+      assert.equal((await volunteers.registerVolunteer({ ...sam, roles: ["setup", "cleanup"] }, retryId)).id, first.id);
+      assert.deepEqual((await volunteers.settings()).volunteerCounts, { emcee: 1, setup: 1, cleanup: 1 });
+      await volunteers.setVolunteerRoles(first.id, ["cleanup"]);
+      assert.deepEqual((await volunteers.getVolunteer(first.id))?.roles, ["cleanup"]);
+      await volunteers.setVolunteerRoles(first.id, []);
+      assert.equal(await volunteers.getVolunteer(first.id), undefined);
+      assert.deepEqual((await volunteers.settings()).volunteerCounts, { emcee: 1, setup: 0, cleanup: 0 });
+    });
+    await t.test("volunteering while registering saves a separate volunteer with the parent contact", async () => {
+      const families = new DerbyStore(container, "family-volunteer-tests");
+      await families.initialize();
+      const submission = randomUUID();
+      const row = await families.register(racer, submission, false, ["check-in"]);
+      assert.equal((await families.register(racer, submission, false, ["check-in"])).id, row.id);
+      const [volunteer] = await families.listVolunteers();
+      assert.deepEqual([volunteer.name, volunteer.phone, volunteer.roles, volunteer.registrationId], [racer.parentName, racer.parentPhone, ["check-in"], row.id]);
+      assert.equal((await families.settings()).volunteerCounts?.["check-in"], 1);
+      assert.ok(!("volunteerRoles" in (await families.get(row.id))!));
     });
     await t.test("UUID lookup rejects invalid IDs, unknown IDs, and other event partitions", async () => {
       const row = await store.get(submissionId);
