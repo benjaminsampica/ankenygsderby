@@ -34,6 +34,7 @@ document.addEventListener("htmx:error", () => {
 });
 document.addEventListener("click", async (event) => {
   if (event.target.closest("[data-print]")) window.print();
+  if (event.target.closest("[data-close-editor]")) document.getElementById("editor").replaceChildren();
   if (event.target.closest("[data-copy-receipt]")) {
     const status = document.getElementById("copy-status");
     try {

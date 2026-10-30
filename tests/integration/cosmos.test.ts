@@ -85,6 +85,11 @@ test("Cosmos: registration, concurrency, retry, edits, private UUID links, expir
       assert.match(await contacts.text(), /"Updated","Smith","Brownie","00123","Jordan Smith","\(515\) 555-0123"/);
       assert.equal((await httpStore.list())[0].raceNumber, row.raceNumber);
       assert.equal((await app.request("/api/admin/export")).status, 403);
+      const stale = await app.request("/api/admin/delete/" + row.id, { method: "POST", headers: adminHeaders, body: new URLSearchParams({ csrf, etag: row._etag! }) });
+      assert.equal(stale.status, 409);
+      const current = (await httpStore.get(row.id))!;
+      assert.equal((await app.request("/api/admin/delete/" + row.id, { method: "POST", headers: adminHeaders, body: new URLSearchParams({ csrf, etag: current._etag! }) })).headers.get("HX-Redirect"), "/admin");
+      assert.equal(await httpStore.get(row.id), undefined);
       const removedSettings = await app.request("/api/admin/settings", { method: "POST", headers: adminHeaders,
         body: new URLSearchParams({ csrf, deadline: "2027-01-09T00:00" }) });
       assert.equal(removedSettings.status, 404);

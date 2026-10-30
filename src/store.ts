@@ -134,6 +134,17 @@ export class DerbyStore {
     }
   }
 
+  // Deleting a racer keeps their race number retired and leaves any volunteer sign-up in place.
+  async remove(id: string, etag: string) {
+    if (!(await this.get(id))) throw new Problem(404, "Registration not found or expired.");
+    try { await this.container.item(id, this.eventId).delete({ accessCondition: { type: "IfMatch", condition: etag } }); }
+    catch (error) {
+      if (codeOf(error) === 404) throw new Problem(404, "Registration not found or expired.");
+      if (codeOf(error) === 412) throw new Problem(409, "Someone edited this registration. Reload it before deleting.");
+      throw error;
+    }
+  }
+
   private volunteerDocument(id: string, signup: VolunteerSignup, registrationId?: string): Volunteer {
     return { ...signup, id, kind: "volunteer", eventId: this.eventId, registrationId, createdAt: new Date().toISOString(),
       expiresAt: event.expiresAt, ttl: remainingTtl(event.expiresAt), submissionHash: volunteerHash(signup) };

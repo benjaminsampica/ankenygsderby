@@ -15,6 +15,7 @@ let server: ReturnType<typeof serve>;
 let origin: string;
 const racer = { id: "a1111111-1111-4111-8111-111111111111", firstName: "Avery", lastName: "Smith", level: "Brownie", troopNumber: "00123", raceNumber: 200,
   parentName: "Jordan Smith", parentPhone: "(515) 555-0123", emergencyName: "Pat Lee", emergencyPhone: "(515) 555-0199", photoConsent: false, _etag: "test-etag" } as Registration;
+const removed: [string, string][] = [];
 const organizer = Buffer.from(JSON.stringify({ identityProvider: "aad", userId: "browser-test", userRoles: ["organizer"] })).toString("base64");
 
 before(async () => {
@@ -28,6 +29,7 @@ before(async () => {
     get: async (id: string) => id === racer.id ? racer : undefined,
     register: async () => racer,
     update: async () => racer,
+    remove: async (id: string, etag: string) => { removed.push([id, etag]); },
   } as unknown as DerbyStore;
   const config = JSON.parse(await readFile("staticwebapp.config.json", "utf8"));
   const app = new Hono();
@@ -199,6 +201,12 @@ test("organizer search/edit swap correctly; export stays a download and auth sta
     await page.getByRole("button", { name: "Save changes" }).click();
     await expect(page.locator(".validation-summary")).toBeFocused();
     await expect(page.locator("#editor form")).toHaveCount(1);
+    await expect(page.getByRole("link", { name: "View confirmation" })).toHaveAttribute("href", "/api/admin/receipt/" + racer.id);
+    const navigations: string[] = [];
+    page.on("framenavigated", frame => { if (frame === page.mainFrame()) navigations.push(frame.url()); });
+    await page.getByRole("button", { name: "Back to roster" }).click();
+    await expect(page.locator("#editor")).toBeEmpty();
+    assert.deepEqual(navigations, []);
     const search = page.getByRole("searchbox");
     await search.fill("no match");
     await expect(page.getByText("No matching racers.")).toBeVisible();
@@ -220,5 +228,18 @@ test("organizer search/edit swap correctly; export stays a download and auth sta
     const logout = page.waitForRequest(request => request.url().includes("/.auth/logout"));
     await page.getByRole("link", { name: "Sign out", exact: true }).click();
     assert.equal((await logout).isNavigationRequest(), true);
+  } finally { await close(); }
+});
+
+test("organizer delete asks first, then sends the loaded etag", async () => {
+  const { page, close } = await pageFor("/admin", true);
+  try {
+    await page.getByRole("button", { name: "Edit racer 200" }).click();
+    page.once("dialog", dialog => dialog.dismiss());
+    await page.getByRole("button", { name: "Delete racer" }).click();
+    assert.deepEqual(removed, []);
+    page.once("dialog", dialog => dialog.accept());
+    await page.getByRole("button", { name: "Delete racer" }).click();
+    await expect.poll(() => removed).toEqual([[racer.id, "test-etag"]]);
   } finally { await close(); }
 });

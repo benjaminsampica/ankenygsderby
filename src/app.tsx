@@ -133,6 +133,18 @@ export function createApp(storeProvider: () => Promise<DerbyStore> = getStore) {
     }
     return redirect(c, "/admin");
   });
+  app.post("/api/admin/delete/:id", async c => {
+    const body = await c.req.parseBody(); checkCsrf(c, body);
+    const store = await storeProvider(), old = await store.get(c.req.param("id"));
+    if (!old) throw new Problem(404, "Registration not found or expired.");
+    const etag = typeof body.etag === "string" ? body.etag : "";
+    try { await store.remove(old.id, etag); }
+    catch (error) {
+      if (!(error instanceof Problem)) throw error;
+      return c.html(<EditForm row={old} etag={etag} csrf={csrf(c)} errors={{ form: error.message }} />, error.status as 400);
+    }
+    return redirect(c, "/admin");
+  });
   app.post("/api/admin/volunteers/:id/remove", async c => {
     const body = await c.req.parseBody(); checkCsrf(c, body);
     const store = await storeProvider(), volunteer = await store.getVolunteer(c.req.param("id"));
