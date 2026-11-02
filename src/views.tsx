@@ -95,9 +95,10 @@ export function Home() {
       <h2 id="race-day-title">Race day</h2>
       <dl class="race-day-details">
         <div class="stitched-panel tone-sage"><dt>Location</dt><dd><strong>{event.venue}</strong><span>{event.address}</span></dd></div>
-        <div class="stitched-panel tone-gold"><dt>Schedule</dt><dd><strong>{event.raceDate}</strong><span>Times below are approximate.</span></dd></div>
+        <div class="stitched-panel tone-gold"><dt>Date</dt><dd><strong>{event.raceDate}</strong></dd></div>
         <div class="stitched-panel tone-lavender"><dt>Check-in</dt><dd>Bring your car with its race number visible and an arrow on the bottom.</dd></div>
       </dl>
+      <p class="schedule-note">Schedule by group. Times are approximate.</p>
       <ol class="schedule-list" aria-label="Race schedule by group">
         {raceSchedule.map((slot, index) => <li class={"schedule-card stitched-panel " + scheduleTones[index % scheduleTones.length]}>
           <h3>{slot.group}</h3>
@@ -343,6 +344,7 @@ export function Receipt({ row }: { row: Registration }) {
     <ol class="receipt-reminders" aria-label="Before race day">
       <li><strong>Write down your race number.</strong> Make sure it's visible on the car, and take a screenshot or print this receipt.</li>
       <li><strong><a href="/guide">Visit the car guide</a>.</strong> Draw an arrow on the bottom of the car pointing to the front, and check the car rules and kit pickup details.</li>
+      <li><strong>Need to change or cancel?</strong> Email <a href={"mailto:" + event.contactEmail}>{event.contactEmail}</a> with the racer's name and race number.</li>
     </ol>
     <dl class="receipt-details"><div><dt>Racer</dt><dd>{row.firstName} {row.lastName}</dd></div><div><dt>Troop level</dt><dd>{levelLabels[row.level]}</dd></div><div><dt>Troop number</dt><dd>{row.troopNumber || "None"}</dd></div><div><dt>Race day</dt><dd>{event.raceDate}</dd></div></dl>
     <div class="receipt-actions"><button class="button" type="button" data-copy-receipt><Icon name="copy" />Copy confirmation link</button><button class="button secondary" type="button" data-print><Icon name="printer" />Print receipt</button></div>
