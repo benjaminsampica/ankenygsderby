@@ -4,7 +4,7 @@ export const event = {
   year: 2027,
   raceDate: "Saturday, January 9, 2027",
   opensAt: "2026-12-04T06:00:00.000Z",
-  closesAt: "2027-01-04T06:00:00.000Z",
+  closesAt: "2027-01-05T06:00:00.000Z",
   expiresAt: "2027-02-08T06:00:00.000Z",
   // Volunteer sign-up opens on deploy and closes at midnight Central after Friday night set-up.
   volunteersCloseAt: "2027-01-09T06:00:00.000Z",
@@ -14,14 +14,14 @@ export const event = {
   contactEmail: "ankenygirlscouts@gmail.com",
 } as const;
 
-export const levels = ["Daisy", "Brownie", "Junior", "Cadette", "Senior", "Ambassador", "Outlaw"] as const;
+export const levels = ["Daisy", "Brownie", "Junior", "Cadette and up", "Outlaw"] as const;
 export type Level = (typeof levels)[number];
 export const levelLabels: Record<Level, string> = {
-  Daisy: "Daisy (K-1)", Brownie: "Brownie (2-3)", Junior: "Junior (4-5)", Cadette: "Cadette (6-8)",
-  Senior: "Senior (9-10)", Ambassador: "Ambassador (11-12)", Outlaw: "Outlaw (open to anyone)",
+  Daisy: "Daisy (K-1)", Brownie: "Brownie (2-3)", Junior: "Junior (4-5)",
+  "Cadette and up": "Cadette, Senior, or Ambassador (6-12)", Outlaw: "Outlaw (open to anyone)",
 };
 export const raceNumberStarts: Record<Level, number> = {
-  Daisy: 100, Brownie: 200, Junior: 300, Cadette: 400, Senior: 500, Ambassador: 600, Outlaw: 700,
+  Daisy: 100, Brownie: 200, Junior: 300, "Cadette and up": 400, Outlaw: 700,
 };
 
 // Approximate race-day times by group.

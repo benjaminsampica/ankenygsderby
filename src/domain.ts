@@ -113,8 +113,9 @@ export function registrationOpen(now = Date.now()) {
   return now >= Date.parse(event.opensAt) && now < Date.parse(event.closesAt) && now < Date.parse(event.expiresAt);
 }
 export function registrationStatus(now = Date.now()) {
-  if (now < Date.parse(event.opensAt)) return `Registration opens ${displayOpening()}.`;
-  return registrationOpen(now) ? `Registration closes ${displayDeadline(event.closesAt)}.` : "Registration is closed. Contact an organizer for help with a late entry.";
+  const closes = `Registration closes ${displayDeadline(event.closesAt)}.`;
+  if (now < Date.parse(event.opensAt)) return `Registration opens ${displayOpening()}. ${closes}`;
+  return registrationOpen(now) ? closes : "Registration is closed. Contact an organizer for help with a late entry.";
 }
 export function remainingTtl(expiresAt: string, now = Date.now()) {
   const seconds = Math.floor((Date.parse(expiresAt) - now) / 1000);

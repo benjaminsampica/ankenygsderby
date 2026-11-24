@@ -113,7 +113,7 @@ test("Cosmos: registration, concurrency, retry, edits, private UUID links, expir
       const changed = await grouped.update(daisy.id, { ...racer, level: "Junior" }, daisy._etag!);
       assert.equal(changed.raceNumber, 302);
       assert.equal((await grouped.get(daisy.id))?.raceNumber, 302);
-      await assert.rejects(grouped.update(daisy.id, { ...racer, level: "Senior" }, daisy._etag!), /Someone edited/);
+      await assert.rejects(grouped.update(daisy.id, { ...racer, level: "Cadette and up" }, daisy._etag!), /Someone edited/);
       const returned = await grouped.update(daisy.id, { ...racer, level: "Daisy" }, changed._etag!);
       assert.equal(returned.raceNumber, 102);
       assert.equal((await grouped.register({ ...racer, level: "Daisy" }, randomUUID())).raceNumber, 103);
