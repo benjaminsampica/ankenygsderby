@@ -64,21 +64,20 @@ function PickupBadge() {
     <path class="badge-rosette" d="M100 16a16.8 16.8 0 0 1 28.7 5.1 16.8 16.8 0 0 1 25.3 14.6 16.8 16.8 0 0 1 18.7 22.3 16.8 16.8 0 0 1 10 27.4 16.8 16.8 0 0 1 0 29.2 16.8 16.8 0 0 1-10 27.4 16.8 16.8 0 0 1-18.7 22.3 16.8 16.8 0 0 1-25.3 14.6 16.8 16.8 0 0 1-28.7 5.1 16.8 16.8 0 0 1-28.7-5.1 16.8 16.8 0 0 1-25.3-14.6 16.8 16.8 0 0 1-18.7-22.3 16.8 16.8 0 0 1-10-27.4 16.8 16.8 0 0 1 0-29.2 16.8 16.8 0 0 1 10-27.4 16.8 16.8 0 0 1 18.7-22.3 16.8 16.8 0 0 1 25.3-14.6A16.8 16.8 0 0 1 100 16Z" />
     <circle class="badge-stitch" cx="100" cy="100" r="76" />
     <circle class="badge-face" cx="100" cy="100" r="68" />
-    <g stroke="currentColor" stroke-width="2.5" stroke-linejoin="round">
-      <path d="M64 106 72 94h56l8 12Z" fill="#d9b45a" stroke="none" />
-      <g transform="rotate(-10 98 76)">
-        <path d="M66 88V76l38-13 18 15 8 3v7Z" fill="#e8ad9f" />
-        <path d="m79 74 22-3" stroke-linecap="round" />
-        <circle cx="80" cy="89" r="8" fill="currentColor" /><circle cx="116" cy="89" r="8" fill="currentColor" />
-        <circle cx="80" cy="89" r="3" class="badge-highlight" stroke="none" /><circle cx="116" cy="89" r="3" class="badge-highlight" stroke="none" />
+    <g transform="translate(0 8)">
+      <g stroke="currentColor" stroke-width="2.5" stroke-linejoin="round">
+        <path d="M64 106 72 94h56l8 12Z" fill="#d9b45a" stroke="none" />
+        <g transform="rotate(-10 98 76)">
+          <path d="M66 88V76l38-13 18 15 8 3v7Z" fill="#e8ad9f" />
+          <path d="m79 74 22-3" stroke-linecap="round" />
+          <circle cx="80" cy="89" r="8" fill="currentColor" /><circle cx="116" cy="89" r="8" fill="currentColor" />
+          <circle cx="80" cy="89" r="3" class="badge-highlight" stroke="none" /><circle cx="116" cy="89" r="3" class="badge-highlight" stroke="none" />
+        </g>
+        <path d="M64 106h72l-4 32H68Zm0 0-18-8 10-10 16 6m64 12 18-8-10-10-16 6" fill="#f1d170" />
       </g>
-      <path d="M64 106h72l-4 32H68Zm0 0-18-8 10-10 16 6m64 12 18-8-10-10-16 6" fill="#f1d170" />
-      <path d="M38 136 26 146l12 4 2 10 14-8Zm124 0 12 10-12 4-2 10-14-8Z" fill="#e9c571" />
-      <path d="M40 132q60-10 120 0v22q-60-10-120 0Z" fill="#f1d170" />
+      <circle cx="142" cy="62" r="7" fill="currentColor" /><circle cx="142" cy="62" r="2.5" class="badge-highlight" />
+      <path d="M132 50c3-4 7-6 12-6M78 46l3 7m19-11v8m19-5-3 7M54 64v10m-5-5h10m92 14v6m-3-3h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
     </g>
-    <text class="pickup-badge-label" x="100" y="149" text-anchor="middle" fill="currentColor">CAR KIT</text>
-    <circle cx="142" cy="62" r="7" fill="currentColor" /><circle cx="142" cy="62" r="2.5" class="badge-highlight" />
-    <path d="M132 50c3-4 7-6 12-6M78 46l3 7m19-11v8m19-5-3 7M54 64v10m-5-5h10m92 14v6m-3-3h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
   </svg>;
 }
 
@@ -121,7 +120,6 @@ export function Home() {
         <div class="stitched-panel tone-gold"><dt>Date</dt><dd><strong>{event.raceDate}</strong></dd></div>
         <div class="stitched-panel tone-lavender"><dt>Check-in</dt><dd>Bring your car with its race number visible and an arrow on the bottom.</dd></div>
       </dl>
-      <p class="schedule-note">Schedule by group. Times are approximate.</p>
       <ol class="schedule-list" aria-label="Race schedule by group">
         {raceSchedule.map((slot, index) => <li class={"schedule-card stitched-panel " + scheduleTones[index % scheduleTones.length]}>
           <h3>{slot.group}</h3>
