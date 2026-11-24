@@ -215,7 +215,8 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 .guide-page address { font-style: normal; line-height: 1.7; }
 .guide-page p { margin-bottom: 16px; }
 .guide-pickup { display: grid; grid-template-columns: 1.5fr 1fr; gap: 40px; padding: var(--panel-space); background: var(--surface-soft); border-radius: var(--radius); scroll-margin-top: 24px; }
-.guide-pickup .event-photo { align-self: center; border-radius: 48px 48px 8px 8px; }
+.pickup-badge { --award-color: var(--sage-ink); --award-tint: var(--sage); width: min(100%, 240px); height: auto; place-self: center; color: var(--award-color); transform: rotate(-5deg); }
+.pickup-badge-label { font-family: var(--font-heading); font-size: 17px; font-weight: 700; letter-spacing: 2px; }
 .guide-pickup h2, .guide-section > h2 { font-size: var(--section-title-size); margin-bottom: 24px; }
 .guide-pickup p:last-child { margin-bottom: 0; }
 .pickup-fee { font-size: 1.05rem; }

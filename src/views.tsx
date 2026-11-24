@@ -59,6 +59,29 @@ function AwardBadge({ motif }: { motif: "first" | "second" | "third" | "scout" |
   </svg>;
 }
 
+function PickupBadge() {
+  return <svg class="pickup-badge" viewBox="0 0 200 200" aria-hidden="true" focusable="false">
+    <path class="badge-rosette" d="M100 16a16.8 16.8 0 0 1 28.7 5.1 16.8 16.8 0 0 1 25.3 14.6 16.8 16.8 0 0 1 18.7 22.3 16.8 16.8 0 0 1 10 27.4 16.8 16.8 0 0 1 0 29.2 16.8 16.8 0 0 1-10 27.4 16.8 16.8 0 0 1-18.7 22.3 16.8 16.8 0 0 1-25.3 14.6 16.8 16.8 0 0 1-28.7 5.1 16.8 16.8 0 0 1-28.7-5.1 16.8 16.8 0 0 1-25.3-14.6 16.8 16.8 0 0 1-18.7-22.3 16.8 16.8 0 0 1-10-27.4 16.8 16.8 0 0 1 0-29.2 16.8 16.8 0 0 1 10-27.4 16.8 16.8 0 0 1 18.7-22.3 16.8 16.8 0 0 1 25.3-14.6A16.8 16.8 0 0 1 100 16Z" />
+    <circle class="badge-stitch" cx="100" cy="100" r="76" />
+    <circle class="badge-face" cx="100" cy="100" r="68" />
+    <g stroke="currentColor" stroke-width="2.5" stroke-linejoin="round">
+      <path d="M64 106 72 94h56l8 12Z" fill="#d9b45a" stroke="none" />
+      <g transform="rotate(-10 98 76)">
+        <path d="M66 88V76l38-13 18 15 8 3v7Z" fill="#e8ad9f" />
+        <path d="m79 74 22-3" stroke-linecap="round" />
+        <circle cx="80" cy="89" r="8" fill="currentColor" /><circle cx="116" cy="89" r="8" fill="currentColor" />
+        <circle cx="80" cy="89" r="3" class="badge-highlight" stroke="none" /><circle cx="116" cy="89" r="3" class="badge-highlight" stroke="none" />
+      </g>
+      <path d="M64 106h72l-4 32H68Zm0 0-18-8 10-10 16 6m64 12 18-8-10-10-16 6" fill="#f1d170" />
+      <path d="M38 136 26 146l12 4 2 10 14-8Zm124 0 12 10-12 4-2 10-14-8Z" fill="#e9c571" />
+      <path d="M40 132q60-10 120 0v22q-60-10-120 0Z" fill="#f1d170" />
+    </g>
+    <text class="pickup-badge-label" x="100" y="149" text-anchor="middle" fill="currentColor">CAR KIT</text>
+    <circle cx="142" cy="62" r="7" fill="currentColor" /><circle cx="142" cy="62" r="2.5" class="badge-highlight" />
+    <path d="M132 50c3-4 7-6 12-6M78 46l3 7m19-11v8m19-5-3 7M54 64v10m-5-5h10m92 14v6m-3-3h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+  </svg>;
+}
+
 export function Layout({ title, page, children }: { title: string; page: string; children: Child }) {
   return <html lang="en"><head>
     <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -198,12 +221,12 @@ export function GuidePage() {
         <p class="pickup-fee">Bring <strong>$10 per registered racer</strong> for event registration and your car kit.</p>
         <div class="pickup-details">
           <div><h3>Where</h3><address>4804 NW 2nd Court<br />Ankeny, IA 50023</address><p class="guide-note">Check your GPS: it should take you to the intersection of Abbie Dr and 2nd Street.</p></div>
-          <div><h3>When</h3><dl class="pickup-hours"><div><dt>Monday-Friday</dt><dd>6-9 pm</dd></div><div><dt>Saturday-Sunday</dt><dd>9 am-9 pm</dd></div></dl><p class="pickup-unavailable">No pickup December 20-28.</p></div>
+          <div><h3>When</h3><dl class="pickup-hours"><div><dt>Monday-Friday</dt><dd>5-9 pm</dd></div><div><dt>Saturday-Sunday</dt><dd>9 am-9 pm</dd></div></dl><p class="pickup-unavailable">No pickup December 20-28.</p></div>
         </div>
         <p>Pickup is self-service, so there’s no need to call. Car kits are in a box by the front door. Leave your payment in the envelope provided.</p>
         <p>If these times don’t work for you, email <a href={contactEmail}>{event.contactEmail}</a>.</p>
       </div>
-      <img class="event-photo" src="/images/cars-2026.jpg" srcset="/images/cars-2026-small.jpg 700w, /images/cars-2026.jpg 1400w" sizes="(max-width: 750px) calc(100vw - 40px), 35vw" width="1400" height="1050" alt="Decorated pinewood derby cars lined up before racing." />
+      <PickupBadge />
     </section>
     <section id="car-rules" class="guide-section" aria-labelledby="rules-title">
       <h2 id="rules-title">Rules &amp; guidelines</h2>
