@@ -4,7 +4,7 @@ export const event = {
   year: 2027,
   raceDate: "Saturday, January 9, 2027",
   opensAt: "2026-12-04T06:00:00.000Z",
-  closesAt: "2027-01-05T06:00:00.000Z",
+  closesAt: "2027-01-04T06:00:00.000Z",
   expiresAt: "2027-02-08T06:00:00.000Z",
   // Volunteer sign-up opens on deploy and closes at midnight Central after Friday night set-up.
   volunteersCloseAt: "2027-01-09T06:00:00.000Z",
